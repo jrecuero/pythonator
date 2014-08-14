@@ -556,7 +556,6 @@ class Notificator(object):
 
         If the given method calls is not a valid one, it raises an exception.
 
-
         >>> nt = Notificator((1, 2, 3), 2)
 
         >>> def say():
@@ -591,6 +590,16 @@ class Notificator(object):
 
         If the given priority value is not a valid one, it raises an exception.
 
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> nt._validatePriorityValue(1)
+
+        >>> nt._validatePriorityValue(0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
+
+
         :type priority: object
         :param priority:
             Notification object to check if it is valid.
@@ -599,7 +608,9 @@ class Notificator(object):
             Priority value is not a valid one.
         """
         if not self.priorityValues.isValid(priority):
-            raise plist.InvalidPriorityException()
+            raise plist.InvalidPriorityException('priority: %s not in %s' %
+                                                 (priority,
+                                                  self.priorityValues.getList()))
 
     # =========================================================================
     def _createPList(self, name=None):
@@ -608,6 +619,21 @@ class Notificator(object):
         It creates a new PListFunction instance to be used inside a trigger
         information dictionary with the instance priorities and defaultPriority
         values.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> pl = nt._createPList('custom plist')
+        >>> pl # doctest: +ELLIPSIS
+        <plist.PListFunction object at 0x...>
+
+        >>> pl.priorityValues.getList()
+        (1, 2, 3)
+
+        >>> pl.priorityValues.getDefault()
+        2
+
+        >>> pl.name
+        'custom plist'
 
         :rtype: plist.PListFunction
         :return:
@@ -624,6 +650,14 @@ class Notificator(object):
 
         It translate the boolean flag to the string with the correct key
         in the priority list dictionary.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> nt._getRegistrationSideFromFlag(True)
+        'before'
+
+        >>> nt._getRegistrationSideFromFlag(False)
+        'after'
 
         :type isBeforeFlag: boolean
         :param isBeforeFlag:
@@ -643,6 +677,15 @@ class Notificator(object):
         It registers a new custom trigger function, where notification can be
         registered later on, and they will be called when the trigger function
         is called.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> def trigger(): pass
+        >>> nt.registerTrigger(trigger) # doctest: +ELLIPSIS
+        {'trigger': <function trigger at 0x...>, 'id': 1}
+
+        >>> nt.triggerInfo[1] # doctest: +ELLIPSIS
+        {'trigger': <function trigger at 0x...>, 'plist': {'after': <plist.PListFunction object at 0x...>, 'before': <plist.PListFunction object at 0x...>}, 'args': (), 'kwargs': {}}
 
         :type triggerFunction: function
         :param triggerFunction:
@@ -721,7 +764,7 @@ class Notificator(object):
             raise RegistrationException()
 
     # =========================================================================
-    def deregisterTriger(self, id):
+    def deregisterTrigger(self, id):
         """Deregister a given trigger at the given id.
 
         It proceeds to deregister the given trigger at the given id.
@@ -729,6 +772,27 @@ class Notificator(object):
         :type id: int
         :param id:
             Id where the trigger is located.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> def trigger(): pass
+        >>> nt.registerTrigger(trigger) # doctest: +ELLIPSIS
+        {'trigger': <function trigger at 0x...>, 'id': 1}
+
+        >>> nt.triggerInfo[1] # doctest: +ELLIPSIS
+        {'trigger': <function trigger at 0x...>, 'plist': {'after': <plist.PListFunction object at 0x...>, 'before': <plist.PListFunction object at 0x...>}, 'args': (), 'kwargs': {}}
+
+        >>> nt.deregisterTrigger(1)
+
+        >>> nt.triggerInfo[1]
+        Traceback (most recent call last):
+        ...
+        KeyError: 1
+
+        >>> nt.deregisterTrigger(1)
+        Traceback (most recent call last):
+        ...
+        DeregistrationException: Deregistration failed : Invalid id value: 1
 
         :raise DeregistrationException:
             If the trigger was not deregistered for any reason.
@@ -741,50 +805,7 @@ class Notificator(object):
             del self.triggerInfo[id]
 
         except InvalidIdException:
-            self.logger.error('%s: Invalid Id Value: %d' %
-                              (info.FUNC(), id))
-            raise DeregistrationException()
-
-    # =========================================================================
-    def runTrigger(self, id, *args, **kwargs):
-        """Run the given trigger by the id.
-
-        It runs the trigger with the given id, and it overrides the given
-        args and kwargs.
-
-        :type id: int
-        :param id:
-            Id where the trigger is located in the triggerInfo dictionary.
-
-        :type args: list
-        :param args:
-                Override list parameters when the trigger function is called.
-
-        :type kwargs: dict
-        :param kwargs:
-                Override dictionary parameters when the trigger function is called.
-
-        :rtype: function
-        :return:
-            Trigger method return value.
-
-        :raise TriggerException:
-            If the trigger didn't run properly.
-        """
-        try:
-            if __debug__:
-                self.logger.debug('%s: running trigger with id=%d' %
-                                  (info.FUNC(), id))
-            self._validateId(id)
-            triggerInfo = self.triggerInfo[id]
-            triggerFunction = triggerInfo[TRIGGER]
-            argsToUse       = args if args  else triggerInfo[ARGS]
-            kwargsToUse     = kwargs if kwargs else triggerInfo[KWARGS]
-            return triggerFunction(*argsToUse, **kwargsToUse)
-        except InvalidIdException:
-            self.logger.error('%s: Invalid Id Value: %d' %
-                              (info.FUNC(), id))
-            raise TriggerException()
+            raise DeregistrationException('Invalid id value: %s' % id)
 
     # =========================================================================
     def registerNotification(self,
@@ -798,6 +819,31 @@ class Notificator(object):
 
         It registers the given notification with the given priority at the
         given position for a trigger which is identified by the given id value.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> def trigger(): pass
+        >>> nt.registerTrigger(trigger) # doctest: +ELLIPSIS
+        {'trigger': <function trigger at 0x...>, 'id': 1}
+
+        >>> def notif(): pass
+        >>> nt.registerNotification(1, 1, True, True, notif)
+        True
+
+        >>> nt.registerNotification(2, 1, True, True, notif)
+        Traceback (most recent call last):
+        ...
+        RegistrationException: Registration failed : Invalid id value: 2
+
+        >>> nt.registerNotification(1, 1, True, True, 'NOTIF')
+        Traceback (most recent call last):
+        ...
+        RegistrationException: Registration failed : Invalid notification method: NOTIF
+
+        >>> nt.registerNotification(1, 0, True, True, notif)
+        Traceback (most recent call last):
+        ...
+        RegistrationException: Registration failed : Invalid priority: 0 not in (1, 2, 3)
 
         :type id: int
         :param id:
@@ -856,17 +902,14 @@ class Notificator(object):
             return True
 
         except InvalidIdException:
-            self.logger.error('%s: Invalid Id Value: %d' %
-                              (info.FUNC(), id))
-            raise RegistrationException()
+            raise RegistrationException('Invalid id value: %s' % id)
         except InvalidMethodCallException:
-            self.logger.error('%s: Invalid Notification: %s' %
-                              (info.FUNC(), notification))
-            raise RegistrationException()
+            raise RegistrationException('Invalid notification method: %s' %
+                                        notification)
         except plist.InvalidPriorityException:
-            self.logger.error('%s: Invalid Priority: %s' %
-                              (info.FUNC(), priority))
-            raise RegistrationException()
+            raise RegistrationException('Invalid priority: %s not in %s' %
+                                        (priority,
+                                         self.priorityValues.getList()))
 
     # =========================================================================
     def deregisterNotification(self,
@@ -878,6 +921,34 @@ class Notificator(object):
 
         It deregisters the given notification with the given priority at the
         given position for a trigger which is identified by the given id value.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> def trigger(): pass
+        >>> nt.registerTrigger(trigger) # doctest: +ELLIPSIS
+        {'trigger': <function trigger at 0x...>, 'id': 1}
+
+        >>> def notif(): pass
+        >>> nt.registerNotification(1, 1, True, True, notif)
+        True
+
+        >>> nt.deregisterNotification(1, 1, True, notif) # doctest: +ELLIPSIS
+        <function notif at 0x...>
+
+        >>> nt.deregisterNotification(2, 1, True, notif)
+        Traceback (most recent call last):
+        ...
+        DeregistrationException: Deregistration failed : Invalid id value: 2
+
+        >>> nt.deregisterNotification(1, 1, True, 'NOTIF')
+        Traceback (most recent call last):
+        ...
+        DeregistrationException: Deregistration failed : Invalid notification method: NOTIF
+
+        >>> nt.deregisterNotification(1, 0, True, notif)
+        Traceback (most recent call last):
+        ...
+        DeregistrationException: Deregistration failed : Invalid priority: 0 not in (1, 2, 3)
 
         :type id: int
         :param id:
@@ -919,17 +990,93 @@ class Notificator(object):
                                                              priority)
 
         except InvalidIdException:
-            self.logger.error('%s: Invalid Id Value: %d' %
-                              (info.FUNC(), id))
-            raise DeregistrationException()
+            raise DeregistrationException('Invalid id value: %s' % id)
         except InvalidMethodCallException, plist.InvalidEntryException:
-            self.logger.error('%s: Invalid Notification: %s' %
-                              (info.FUNC(), notification))
-            raise DeregistrationException()
+            raise DeregistrationException('Invalid notification method: %s' %
+                                          notification)
         except plist.InvalidPriorityException:
-            self.logger.error('%s: Invalid Priority: %s' %
-                              (info.FUNC(), priority))
-            raise DeregistrationException()
+            raise DeregistrationException('Invalid priority: %s not in %s' %
+                                          (priority,
+                                           self.priorityValues.getList()))
+
+    # =========================================================================
+    def runTrigger(self, id, *args, **kwargs):
+        """Run the given trigger by the id.
+
+        It runs the trigger with the given id, and it overrides the given
+        args and kwargs.
+
+        >>> nt = Notificator((1, 2, 3), 2)
+
+        >>> def trigger1(): print 'the trigger1'
+        >>> nt.registerTrigger(trigger1) # doctest: +ELLIPSIS
+        {'trigger': <function trigger1 at 0x...>, 'id': 1}
+
+        >>> nt.runTrigger(1)
+        the trigger1
+
+        >>> def trigger2(x, y=0): print 'the trigger2 with (%s, %s)' % (x, y)
+        >>> nt.registerTrigger(trigger2) # doctest: +ELLIPSIS
+        {'trigger': <function trigger2 at 0x...>, 'id': 2}
+
+        >>> nt.runTrigger(2, 'two', y=2)
+        the trigger2 with (two, 2)
+
+        >>> def trigger3(x, y=0): print 'the trigger3 with (%s, %s)' % (x, y)
+        >>> nt.registerTrigger(trigger3, 'THREE', y=3) # doctest: +ELLIPSIS
+        {'trigger': <function trigger3 at 0x...>, 'id': 3}
+
+        >>> nt.runTrigger(3)
+        the trigger3 with (THREE, 3)
+
+        >>> def trigger4(): print 'the trigger4'
+        >>> nt.registerTrigger(trigger4) # doctest: +ELLIPSIS
+        {'trigger': <function trigger4 at 0x...>, 'id': 4}
+
+        >>> def notif1(): print 'notif1'
+        >>> nt.registerNotification(4, 1, True, True, notif1)
+        True
+
+        >>> nt.runTrigger(4)
+        notif1
+        the trigger4
+
+        >>> nt.runTrigger(0)
+        Traceback (most recent call last):
+        ...
+        TriggerException: Trigger failed : Invalid id value: 0
+
+        :type id: int
+        :param id:
+            Id where the trigger is located in the triggerInfo dictionary.
+
+        :type args: list
+        :param args:
+                Override list parameters when the trigger function is called.
+
+        :type kwargs: dict
+        :param kwargs:
+                Override dictionary parameters when the trigger function is called.
+
+        :rtype: function
+        :return:
+            Trigger method return value.
+
+        :raise TriggerException:
+            If the trigger didn't run properly.
+        """
+        try:
+            if __debug__:
+                self.logger.debug('%s: running trigger with id=%d' %
+                                  (info.FUNC(), id))
+            self._validateId(id)
+            triggerInfo = self.triggerInfo[id]
+            triggerFunction = triggerInfo[TRIGGER]
+            argsToUse       = args if args  else triggerInfo[ARGS]
+            kwargsToUse     = kwargs if kwargs else triggerInfo[KWARGS]
+            return triggerFunction(*argsToUse, **kwargsToUse)
+        except InvalidIdException:
+            raise TriggerException('Invalid id value: %s' % id)
 
 
 ###############################################################################

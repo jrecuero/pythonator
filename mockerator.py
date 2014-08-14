@@ -876,6 +876,13 @@ def getMockInstance(instance):
 
     It returns the Mock instance for an instance that has been mockerated.
 
+    >>> class Testy(object): pass
+    >>> testy = Testy()
+    >>> attachMockerator(testy)
+
+    >>> getMockInstance(testy) # doctest: +ELLIPSIS
+    <Mock id='...'>
+
     :type instance: object
     :param instance: Instance being mockerated.
 
@@ -892,6 +899,14 @@ def getMockMethodDict(instance):
     It returns the attribute that contains a dictionary with all methods that
     have been mockerated.
 
+    >>> class Testy(object):
+    ...     def testy1(self): pass
+    >>> testy = Testy()
+    >>> attachMockerator(testy)
+
+    >>> getMockMethodDict(testy) # doctest: +ELLIPSIS
+    {'testy1': {'flag': False, 'method': <bound method Testy.testy1 of <__main__.Testy object at 0x...>}}
+
     :type instance: object
     :param instance: Instance being mockerated.
 
@@ -904,6 +919,17 @@ def getMockMethodDict(instance):
 # =============================================================================
 def getMethodCalls(instance):
     """ Return all calls stored in the Mock instance.
+
+    >>> class Testy(object):
+    ...     def testy1(self): pass
+    ...     def testy2(self): pass
+    >>> testy = Testy()
+    >>> attachMockerator(testy, timeStamp=False)
+    >>> testy.testy1()
+    >>> testy.testy2()
+
+    >>> getMethodCalls(testy)
+    [call.testy1(), call.testy2()]
 
     :type instance: object
     :param instance: Instance being mockerated.
@@ -923,6 +949,19 @@ def getMethodCalls(instance):
 # =============================================================================
 def getReturnValueMethodCalls(instance):
     """ Return all return values for every call being traced.
+
+    >>> class Testy(object):
+    ...     def testy1(self): return 1
+    ...     def testy2(self): return 2
+    >>> testy = Testy()
+    >>> attachMockerator(testy, timeStamp=False)
+    >>> testy.testy1()
+    1
+    >>> testy.testy2()
+    2
+
+    >>> getReturnValueMethodCalls(testy)
+    [(1, 'testy1'), (2, 'testy2')]
 
     :type instance: object
     :param instance: Instance being mockerated.
@@ -1018,4 +1057,5 @@ def check(pattern, instance=None, tested=None, result=None):
 #
 
 if __name__ == '__main__':
-    pass
+    import doctest
+    doctest.testmod()
