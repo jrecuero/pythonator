@@ -95,8 +95,19 @@ class PriorityListException(error.BaseException):
     """Priority List Exception.
     Exception raised when a none valid list of priorities is passed. A valid
     list of priorities should never be None and it should be a list.
+
+    >>> ex = PriorityListException()
+
+    >>> ex.BASE_MESSAGE
+    'Not valid priority list'
+
+    >>> raise PriorityListException('custom plist exception')
+    Traceback (most recent call last):
+    ...
+    PriorityListException: Not valid priority list : custom plist exception
+
     """
-    BASE_MESSAGE = 'Entry can not be None'
+    BASE_MESSAGE = 'Not valid priority list'
 
 
 #
@@ -104,9 +115,21 @@ class PriorityListException(error.BaseException):
 #
 class DefaultPriorityException(error.BaseException):
     """Default Priority Exception.
-    Exception raised when the value does not belond to the list of priorities.
+    Exception raised when the default value does not belont to the priority
+    list.
+
+    >>> ex = DefaultPriorityException()
+
+    >>> ex.BASE_MESSAGE
+    'Default priority not valid'
+
+    >>> raise DefaultPriorityException('custom default priority')
+    Traceback (most recent call last):
+    ...
+    DefaultPriorityException: Default priority not valid : custom default priority
+
     """
-    BASE_MESSAGE = 'Not a valid priority'
+    BASE_MESSAGE = 'Default priority not valid'
 
 
 #
@@ -117,8 +140,19 @@ class InvalidEntryException(error.BaseException):
     Exception raised when the entry to register to the priority list.
     is not valid. Entry validation depends on the priority list implementation
     but it should not be None at the least.
+
+    >>> ex = InvalidEntryException()
+
+    >>> ex.BASE_MESSAGE
+    'Not a valid priority'
+
+    >>> raise InvalidEntryException('custom invalid entry')
+    Traceback (most recent call last):
+    ...
+    InvalidEntryException: Not a valid priority : custom invalid entry
+
     """
-    BASE_MESSAGE = 'Priorities list not provided.'
+    BASE_MESSAGE = 'Not a valid priority'
 
 
 #
@@ -127,8 +161,19 @@ class InvalidEntryException(error.BaseException):
 class InvalidPriorityException(error.BaseException):
     """Invalid Priority Exception.
     Exception raised when the value does not belond to the list of priorities.
+
+    >>> ex = InvalidPriorityException()
+
+    >>> ex.BASE_MESSAGE
+    'Priority is not in the priority list'
+
+    >>> raise InvalidPriorityException('custom invalid priority')
+    Traceback (most recent call last):
+    ...
+    InvalidPriorityException: Priority is not in the priority list : custom invalid priority
+
     """
-    BASE_MESSAGE = 'Default priority not valid.'
+    BASE_MESSAGE = 'Priority is not in the priority list'
 
 
 #
@@ -166,6 +211,34 @@ class PValuesList(object):
     def __init__(self, priorities, defaultPriority, name=None):
         """PValuesList class constructor.
 
+        >>> pl = PValuesList((1, 2, 3), 2, "custom enums")
+
+        >>> pl.logger # doctest: +ELLIPSIS
+        <loggerator.Loggerator object at 0x...>
+
+        >>> pl.priorities
+        (1, 2, 3)
+
+        >>> pl.defaultPriority
+        2
+
+        >>> pl.name
+        'custom enums'
+
+        >>> pl = PValuesList((1, 2, 3), 2)
+
+        >>> pl.name
+
+        >>> pl = PValuesList((1, 2, 3), 0)
+        Traceback (most recent call last):
+        ...
+        DefaultPriorityException: Default priority not valid : default: 0 not in (1, 2, 3)
+
+        >>> pl = PValuesList(0, 0)
+        Traceback (most recent call last):
+        ...
+        PriorityListException: Not valid priority list : priorities: 0
+
         :type priorities: list
         :param priorities:
             It is the list of priorities.
@@ -184,9 +257,10 @@ class PValuesList(object):
             Default priority does not belong to list of priorities provided.
         """
         if not priorities or isinstance(priorities, list):
-            raise PriorityListException()
+            raise PriorityListException('priorities: %s' % (priorities, ))
         if not defaultPriority in priorities:
-            raise DefaultPriorityException()
+            raise DefaultPriorityException('default: %s not in %s' %
+                                           (defaultPriority, priorities))
 
         self.logger          = loggerator.getLoggerator('pobject')
         self.priorities      = priorities
@@ -863,4 +937,5 @@ class PListFunction(PList):
 ###############################################################################
 #
 if __name__ == "__main__":
-    pass
+    import doctest
+    doctest.testmod()
