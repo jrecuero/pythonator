@@ -144,15 +144,15 @@ class InvalidEntryException(error.BaseException):
     >>> ex = InvalidEntryException()
 
     >>> ex.BASE_MESSAGE
-    'Not a valid priority'
+    'Not a valid entry'
 
     >>> raise InvalidEntryException('custom invalid entry')
     Traceback (most recent call last):
     ...
-    InvalidEntryException: Not a valid priority : custom invalid entry
+    InvalidEntryException: Not a valid entry : custom invalid entry
 
     """
-    BASE_MESSAGE = 'Not a valid priority'
+    BASE_MESSAGE = 'Not a valid entry'
 
 
 #
@@ -274,6 +274,14 @@ class PValuesList(object):
         It verifies that the given priority is valid and it is included in
         the list with all posssible priorities.
 
+        >>> pl = PValuesList((1, 2, 3), 2, "custom enums")
+
+        >>> pl.isValid(1)
+        True
+
+        >>> pl.isValid(0)
+        False
+
         :type priority: object
         :param priority:
             Priority to check if it is valid.
@@ -291,6 +299,11 @@ class PValuesList(object):
 
         It returns a list with all possible valid priorities.
 
+        >>> pl = PValuesList((1, 2, 3), 2, "custom enums")
+
+        >>> pl.getList()
+        (1, 2, 3)
+
         :rtype: list
         :return:
             List with all priorities.
@@ -304,6 +317,19 @@ class PValuesList(object):
         It returns the value for the default priority stored if the given
         priority is None.
 
+        >>> pl = PValuesList((1, 2, 3), 2, "custom enums")
+
+        >>> pl.getDefault()
+        2
+
+        >>> pl.getDefault(1)
+        1
+
+        >>> pl.getDefault(0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
+
         :type priority: object
         :param priority:
             Priority to use if valid.
@@ -316,7 +342,7 @@ class PValuesList(object):
         else:
             if self.isValid(priority):
                 return priority
-        raise InvalidPriorityException('priority: %s' % priority)
+        raise InvalidPriorityException('priority: %s not in %s' % (priority, self.priorities))
 
 
 #
@@ -386,6 +412,35 @@ class PList(object):
 
         A list will be created per entry in the list of priorities.
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl.logger # doctest: +ELLIPSIS
+        <loggerator.Loggerator object at 0x...>
+
+        >>> pl.priorityValues # doctest: +ELLIPSIS
+        <__main__.PValuesList object at 0x...>
+
+        >>> pl.name
+        'custom list'
+
+        >>> pl.container
+        {1: [], 2: [], 3: []}
+
+        >>> pl = PList(None, 2)
+        Traceback (most recent call last):
+        ...
+        PriorityListException: Not valid priority list : priorities: None
+
+        >>> pl = PList(2, 2)
+        Traceback (most recent call last):
+        ...
+        PriorityListException: Not valid priority list : priorities: 2
+
+        >>> pl = PList((1, 2, 3), 4)
+        Traceback (most recent call last):
+        ...
+        DefaultPriorityException: Default priority not valid : default: 4 not in (1, 2, 3)
+
         :type priorities: list
         :param priorities:
             It is the list of priorities to be used in the priority list.
@@ -406,11 +461,11 @@ class PList(object):
         :raise DefaultPriorityException:
             Default priority does not belong to list of priorities provided.
         """
-        if not priorities or isinstance(priorities, list):
-            raise PriorityListException()
+        if not priorities or not isinstance(priorities, tuple):
+            raise PriorityListException('priorities: %s' % (priorities, ))
 
         if not defaultPriority in priorities:
-            raise DefaultPriorityException()
+            raise DefaultPriorityException('default: %s not in %s' % (defaultPriority, priorities))
 
         self.logger         = loggerator.getLoggerator('plist')
         self.priorityValues = PValuesList(priorities, defaultPriority)
@@ -426,6 +481,15 @@ class PList(object):
         It validates entry is valid for the priority list. This method should
         be overriden by any specialized derived class.
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl._validateEntry(0)
+
+        >>> pl._validateEntry(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
         :type entry: object
         :param entry:
             Object to be validated before being inserted.
@@ -434,7 +498,7 @@ class PList(object):
             Entry is None or not valid.
         """
         if entry is None:
-            raise InvalidEntryException('Entry: %s' % entry)
+            raise InvalidEntryException('entry: %s' % entry)
 
     # =========================================================================
     def _getEntryFromContainer(self, entry, priority):
@@ -446,6 +510,16 @@ class PList(object):
         It can be overriden in derived classes in order to provide the
         real entry to be used, because the entry parameter could not be
         the same as the entry in the container for derived classes.
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', ], 2: [], 3: []}
+
+        >>> pl._getEntryFromContainer('one', 1)
+        'one'
+
+        >>> pl._getEntryFromContainer('two', 1)
+
+        >>> pl._getEntryFromContainer('one', 2)
 
         :type entry: object
         :param entry:
@@ -462,11 +536,69 @@ class PList(object):
         return entry if entry in self.container[priority] else None
 
     # =========================================================================
+    def _getValueFromEntry(self, entry):
+        """ Return value to return when an entry is found.
+
+        This method is used to return the value inside any entry stored in the
+        Plist.
+
+        This method should be redefined in derived list
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl._getValueFromEntry('one')
+        'one'
+
+        :type entry: dict
+        :param entry: Entry found in the PListFunction.
+
+        :rtype: object
+        :return: Object stored in the entry in the PList.
+        """
+        return entry
+
+    # =========================================================================
     def addAtFront(self, entry, priority=None):
         """Add a new entry at the top/front of the list for the given priority.
 
         It adds the given entry in the list for the given priority, and it
         adds at the start/front of the list.
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl.addAtFront('one', 3)
+        'one'
+
+        >>> pl.container
+        {1: [], 2: [], 3: ['one']}
+
+        >>> pl.addAtFront('two', 3)
+        'two'
+
+        >>> pl.container
+        {1: [], 2: [], 3: ['two', 'one']}
+
+        >>> pl.addAtFront('three')
+        'three'
+
+        >>> pl.container
+        {1: [], 2: ['three'], 3: ['two', 'one']}
+
+        >>> pl.addAtFront('four')
+        'four'
+
+        >>> pl.container
+        {1: [], 2: ['four', 'three'], 3: ['two', 'one']}
+
+        >>> pl.addAtFront(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
+        >>> pl.addAtFront('five', 0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
 
         :type entry: object
         :param entry:
@@ -502,6 +634,42 @@ class PList(object):
         It adds the given entry in the list for the given priority , and it
         adds at the back/end of the list.
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl.addAtBack('one', 3)
+        'one'
+
+        >>> pl.container
+        {1: [], 2: [], 3: ['one']}
+
+        >>> pl.addAtBack('two', 3)
+        'two'
+
+        >>> pl.container
+        {1: [], 2: [], 3: ['one', 'two']}
+
+        >>> pl.addAtBack('three')
+        'three'
+
+        >>> pl.container
+        {1: [], 2: ['three'], 3: ['one', 'two']}
+
+        >>> pl.addAtBack('four')
+        'four'
+
+        >>> pl.container
+        {1: [], 2: ['three', 'four'], 3: ['one', 'two']}
+
+        >>> pl.addAtBack(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
+        >>> pl.addAtBack('five', 0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
+
         :type entry: object
         :param entry:
             Object to be added at the back of the list.
@@ -536,6 +704,25 @@ class PList(object):
         It adds the given entry for every priority, and it adds at the front
         for every list
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl.addAtFrontForAll('one')
+        ['one', 'one', 'one']
+
+        >>> pl.container
+        {1: ['one'], 2: ['one'], 3: ['one']}
+
+        >>> pl.addAtFrontForAll('two')
+        ['two', 'two', 'two']
+
+        >>> pl.container
+        {1: ['two', 'one'], 2: ['two', 'one'], 3: ['two', 'one']}
+
+        >>> pl.addAtFrontForAll(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
         :type entry: object
         :param entry:
             Object to be added at the front of the list.
@@ -561,6 +748,25 @@ class PList(object):
         It adds the given entry for every priority, and it adds at the back for
         every list
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl.addAtBackForAll('one')
+        ['one', 'one', 'one']
+
+        >>> pl.container
+        {1: ['one'], 2: ['one'], 3: ['one']}
+
+        >>> pl.addAtBackForAll('two')
+        ['two', 'two', 'two']
+
+        >>> pl.container
+        {1: ['one', 'two'], 2: ['one', 'two'], 3: ['one', 'two']}
+
+        >>> pl.addAtBackForAll(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
         :type entry: object
         :param entry:
             Object to be added at the back of the list.
@@ -584,6 +790,51 @@ class PList(object):
         """Remove the given entry from the given priority list.
 
         It removes the given entry from the list for the given priority.
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'four'], 3: ['five']}
+
+        >>> pl.remove('one', 1)
+        'one'
+
+        >>> pl.container
+        {1: ['two'], 2: ['three', 'four'], 3: ['five']}
+
+        >>> pl.remove('four')
+        'four'
+
+        >>> pl.container
+        {1: ['two'], 2: ['three'], 3: ['five']}
+
+        >>> pl.remove(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
+        >>> pl.remove('five', 0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
+
+        >>> pl.remove('two')
+
+        >>> pl.container
+        {1: ['two'], 2: ['three'], 3: ['five']}
+
+        >>> pl.remove('two', 3) # entry in other priority
+
+        >>> pl.container
+        {1: ['two'], 2: ['three'], 3: ['five']}
+
+        >>> pl.remove('six') # entry not found in default priority
+
+        >>> pl.container
+        {1: ['two'], 2: ['three'], 3: ['five']}
+
+        >>> pl.remove('six', 1) # entry not foun in given priority
+
+        >>> pl.container
+        {1: ['two'], 2: ['three'], 3: ['five']}
 
         :type entry: object
         :param entry:
@@ -625,6 +876,38 @@ class PList(object):
 
         It removes the given entry from every priority list.
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.removeForAll('one')
+        ['one', 'one', 'one']
+
+        >>> pl.container
+        {1: ['two'], 2: ['three', 'four'], 3: ['five', 'two']}
+
+        >>> pl.removeForAll('two')
+        ['two', None, 'two']
+
+        >>> pl.container
+        {1: [], 2: ['three', 'four'], 3: ['five']}
+
+        >>> pl.removeForAll('four')
+        [None, 'four', None]
+
+        >>> pl.container
+        {1: [], 2: ['three'], 3: ['five']}
+
+        >>> pl.removeForAll(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : entry: None
+
+        >>> pl.removeForAll('one')
+        [None, None, None]
+
+        >>> pl.container
+        {1: [], 2: ['three'], 3: ['five']}
+
         :type entry: object
         :param entry:
             Object to be removed from the list.
@@ -651,6 +934,20 @@ class PList(object):
 
         It returns the list with all entries for the given priority.
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.getListForPriority()
+        ['three', 'one', 'four']
+
+        >>> pl.getListForPriority(1)
+        ['one', 'two']
+
+        >>> pl.getListForPriority(0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
+
         :type priority: object
         :param priority:
             Priority of the list to be returned, If no value is given for the
@@ -676,13 +973,19 @@ class PList(object):
         The list returned doesn't have any information about which entries
         belong to whar priority.
 
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.getAllLists()
+        [['one', 'two'], ['three', 'one', 'four'], ['five', 'two', 'one']]
+
         :rtype: list
         :return:
             All priority list concatenaited.
         """
         retvalue = []
         for priority in self.priorityValues.getList():
-            retvalue += self.container[priority]
+            retvalue.append(self.container[priority])
         return retvalue
 
     # =========================================================================
@@ -691,6 +994,24 @@ class PList(object):
 
         It cleans a list for the given priority, removing all entries for
         that list.
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.cleanList()
+
+        >>> pl.container
+        {1: ['one', 'two'], 2: [], 3: ['five', 'two', 'one']}
+
+        >>> pl.cleanList(3)
+
+        >>> pl.container
+        {1: ['one', 'two'], 2: [], 3: []}
+
+        >>> pl.cleanList(0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
 
         :type priority: object
         :param priority:
@@ -708,6 +1029,15 @@ class PList(object):
         """Clean all lists.
 
         It cleans all priority lists.
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.cleanListForAll()
+
+        >>> pl.container
+        {1: [], 2: [], 3: []}
+
         """
         for priority in self.priorityValues.getList():
             self.cleanList(priority)
@@ -717,6 +1047,20 @@ class PList(object):
         """Number of entries in the list for the given priority.
 
         It returns the length for the list for the given priority.
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.lenInList()
+        3
+
+        >>> pl.lenInList(1)
+        2
+
+        >>> pl.lenInList(0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
 
         :type priority: object
         :param priority:
@@ -766,6 +1110,22 @@ class PListFunction(PList):
                             | Entry['kwargs'] -> kwargs to pass to method call |
                             |__________________________________________________|
 
+
+    >>> def func1(): pass
+    >>> def func2(x): pass
+    >>> def func3(x, y=0): pass
+
+    >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+
+    >>> pl.addAtFront({'method': func1, }, 1) # doctest: +ELLIPSIS
+    {'args': (), 'method': <function func1 at 0x...>, 'kwargs': {}}
+
+    >>> pl.addAtFront({'method': func2, 'args': ('one', ), }, 2) # doctest: +ELLIPSIS
+    {'args': ('one',), 'method': <function func2 at 0x...>, 'kwargs': {}}
+
+    >>> pl.addAtFront({'method': func3, 'args': ('two', ), 'kwargs': {'y': 1}}, 3) # doctest: +ELLIPSIS
+    {'args': ('two',), 'method': <function func3 at 0x...>, 'kwargs': {'y': 1}}
+
     """
 
     # =========================================================================
@@ -773,6 +1133,42 @@ class PListFunction(PList):
         """Validate method is valid.
 
         It validate the method provided is a function call.
+
+        >>> def func1(): pass
+        >>> def func2(x): pass
+        >>> def func3(x, y=0): pass
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+
+        >>> entry = ({'method': func1, })
+        >>> pl._validateEntry(entry)
+        >>> entry # doctest: +ELLIPSIS
+        {'args': (), 'method': <function func1 at 0x...>, 'kwargs': {}}
+
+        >>> entry = {'method': func2, 'args': ('one', ), }
+        >>> pl._validateEntry(entry)
+        >>> entry # doctest: +ELLIPSIS
+        {'args': ('one',), 'method': <function func2 at 0x...>, 'kwargs': {}}
+
+        >>> entry = {'method': func3, 'args': ('two', ), 'kwargs': {'y': 1}}
+        >>> pl._validateEntry(entry)
+        >>> entry # doctest: +ELLIPSIS
+        {'args': ('two',), 'method': <function func3 at 0x...>, 'kwargs': {'y': 1}}
+
+        >>> pl._validateEntry(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: None
+
+        >>> pl._validateEntry({'METHOD': func1, }) # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: {'METHOD': <function func1 at 0x...>}
+
+        >>> pl._validateEntry({'method': 0, })
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: {'method': 0}
+
 
         :type entry: object
         :param entry:
@@ -790,7 +1186,7 @@ class PListFunction(PList):
             raise InvalidEntryException('Entry: %s' % entry)
 
     # =========================================================================
-    def _getEntryFromContainer(self, method, priority):
+    def _getEntryFromContainer(self, method, priority=None):
         """Get entry from the container.
 
         This method returns the entry from the container for the given priority
@@ -799,6 +1195,33 @@ class PListFunction(PList):
         In this case the parameter method is the method stored in the priority
         list with key equal to 'method', and the value returned should be the
         real entry in the container for the given priority.
+
+        >>> def func1(): pass
+        >>> def func2(x): pass
+        >>> def func3(x, y=0): pass
+        >>> def func4(): pass
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+        >>> pl.addAtFront({'method': func1, }, 1) # doctest: +ELLIPSIS
+        {'args': (), 'method': <function func1 at 0x...>, 'kwargs': {}}
+        >>> pl.addAtFront({'method': func2, 'args': ('one', ), }, 2) # doctest: +ELLIPSIS
+        {'args': ('one',), 'method': <function func2 at 0x...>, 'kwargs': {}}
+        >>> pl.addAtFront({'method': func3, 'args': ('two', ), 'kwargs': {'y': 1}}, 3) # doctest: +ELLIPSIS
+        {'args': ('two',), 'method': <function func3 at 0x...>, 'kwargs': {'y': 1}}
+
+        >>> pl._getEntryFromContainer(func2) # doctest: +ELLIPSIS
+        {'args': ('one',), 'method': <function func2 at 0x...>, 'kwargs': {}}
+
+        >>> pl._getEntryFromContainer(func3, 3) # doctest: +ELLIPSIS
+        {'args': ('two',), 'method': <function func3 at 0x...>, 'kwargs': {'y': 1}}
+
+        >>> pl._getEntryFromContainer(func2, 1) # entry in other priority
+
+        >>> pl._getEntryFromContainer(func4) # not found entry
+
+        >>> pl._getEntryFromContainer(func3, 0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
 
         :type method: function
         :param method:
@@ -812,8 +1235,9 @@ class PListFunction(PList):
         :return:
             Real entry in the container to be removed or None if not found.
         """
+        priority = self.priorityValues.getDefault(priority)
         for traverse in self.container[priority]:
-            if method[METHOD] == traverse[METHOD]:
+            if method == traverse[METHOD]:
                 return traverse
         return None
 
@@ -824,13 +1248,38 @@ class PListFunction(PList):
         This method is used to return the method inside any entry stored in the
         PListFunction.
 
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+
+        >>> def func(x, y=0): pass
+        >>> entry = {'method': func, 'args': ('two', ), 'kwargs': {'y': 1}}
+        >>> pl._getValueFromEntry(entry) # doctest: +ELLIPSIS
+        <function func at 0x...>
+
+        >>> pl._getValueFromEntry(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: None
+
+        >>> pl._getValueFromEntry({'METHOD': func, }) # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: {'METHOD': <function func at 0x...>}
+
+        >>> pl._getValueFromEntry({'method': 0, })
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: {'method': 0}
+
         :type entry: dict
         :param entry: Entry found in the PListFunction.
 
         :rtype: function
         :return: Function stored in the entry in the PListFunction.
         """
-        return entry['method']
+        if entry is not None and METHOD in entry and hasattr(entry[METHOD], '__call__'):
+            return entry['method']
+        else:
+            raise InvalidEntryException('Entry: %s' % entry)
 
     # =========================================================================
     def _callEntry(self, entry, *args, **kwargs):
@@ -839,9 +1288,53 @@ class PListFunction(PList):
         It get the method, args and kwargs from the given entry, and proceed
         to call it.
 
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+
+        >>> def func1(): return True
+        >>> entry = {'method': func1, 'args': (), 'kwargs': {}}
+        >>> pl._callEntry(entry)
+        True
+
+        >>> def func2(x): return x
+        >>> entry = {'method': func2, 'args': ('one', ), 'kwargs': {}}
+        >>> pl._callEntry(entry)
+        'one'
+
+        >>> entry = {'method': func2, 'args': (), 'kwargs': {}}
+        >>> pl._callEntry(entry, 'three')
+        'three'
+
+        >>> def func3(x, y=0): return (x, y)
+        >>> entry = {'method': func3, 'args': ('one', ), 'kwargs': {'y': 'two'}}
+        >>> pl._callEntry(entry)
+        ('one', 'two')
+
+        >>> entry = {'method': func3, 'args': ('two', ), 'kwargs': {}}
+        >>> pl._callEntry(entry)
+        ('two', 0)
+
+        >>> entry = {'method': func3, 'args': (), 'kwargs': {}}
+        >>> pl._callEntry(entry, 'three')
+        ('three', 0)
+
+        >>> entry = {'method': func3, 'args': (), 'kwargs': {}}
+        >>> pl._callEntry(entry, 'four', y='five')
+        ('four', 'five')
+
+        >>> def func4(x, y, v=0, w=1): return (x, y, v, w)
+        >>> entry = {'method': func4, 'args': ('one', ), 'kwargs': {'v': 'two'}}
+        >>> pl._callEntry(entry, '1', w='2')
+        ('one', '1', 'two', '2')
+
         :type entry: dict
         :param entry:
             Dictionary containing method, args and kwargs.
+
+        :type args: list
+        :param args: list with arguements to passed to the method to call
+
+        :type kwargs: dict
+        :param kwargs: dict with arguements to passed to the method to call
         """
         method = entry[METHOD]
         argsToUse = list(entry[ARGS])
@@ -851,7 +1344,7 @@ class PListFunction(PList):
         if __trace__:
             self.logger.debug('%s method %s, args %s, kwargs %s' %
                               (info.FUNC(), method, argsToUse, kwargsToUse))
-        method(*argsToUse, **kwargsToUse)
+        return method(*argsToUse, **kwargsToUse)
 
     # =========================================================================
     def callForPriority(self, priority=None, *args, **kwargs):
@@ -859,10 +1352,59 @@ class PListFunction(PList):
 
         It calls all methods for the given priority.
 
+        >>> def func1(): print 'func1'
+        >>> def func2(x): print 'func2 %s' % x
+        >>> def func3(x, y=0): print 'func3 %s, %s' % (x, y)
+        >>> def func4(): pass
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+        >>> pl.addAtFront({'method': func1, }, 1) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func2, 'args': ('one', ), }, 2) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func3, 'args': ('two', ), 'kwargs': {'y': 1}}, 3) # doctest: +ELLIPSIS
+        {...}
+
+        >>> pl.callForPriority(1)
+        func1
+
+        >>> pl.callForPriority()
+        func2 one
+
+        >>> pl.callForPriority(3)
+        func3 two, 1
+
+        >>> pl.cleanListForAll()
+        >>> pl.addAtFront({'method': func1, }, 1) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func2, }, 2) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func3, }, 3) # doctest: +ELLIPSIS
+        {...}
+
+        >>> pl.callForPriority(2, 'two')
+        func2 two
+
+        >>> pl.callForPriority(3, 'three')
+        func3 three, 0
+
+        >>> pl.callForPriority(3, 'three', y=3)
+        func3 three, 3
+
+        >>> pl.callForPriority(0)
+        Traceback (most recent call last):
+        ...
+        InvalidPriorityException: Priority is not in the priority list : priority: 0 not in (1, 2, 3)
+
         :type priority: object
         :param priority:
             Priority of the list where methods should be called, If no value is
             given for the priority, the default priority will be used.
+
+        :type args: list
+        :param args: list with arguements to passed to the method to call
+
+        :type kwargs: dict
+        :param kwargs: dict with arguements to passed to the method to call
 
         :raise InvalidPriorityException:
             Priority is not a valid one.
@@ -879,6 +1421,55 @@ class PListFunction(PList):
         """Call all methods.
 
         It calls all methods for every priority.
+
+        >>> def func1(): print 'func1'
+        >>> def func2(x): print 'func2 %s' % x
+        >>> def func3(x, y=0): print 'func3 %s, %s' % (x, y)
+        >>> def func4(): pass
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+        >>> pl.addAtFront({'method': func1, }, 1) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func2, 'args': ('one', ), }, 2) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func3, 'args': ('two', ), 'kwargs': {'y': 1}}, 3) # doctest: +ELLIPSIS
+        {...}
+
+        >>> pl.callForAll()
+        func1
+        func2 one
+        func3 two, 1
+
+        >>> pl.cleanListForAll()
+        >>> pl.addAtFront({'method': func2, }, 1) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func2, }, 2) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func2, }, 3) # doctest: +ELLIPSIS
+        {...}
+
+        >>> pl.callForAll('TWO')
+        func2 TWO
+        func2 TWO
+        func2 TWO
+
+        >>> pl.cleanListForAll()
+        >>> pl.addAtFront({'method': func3, }, 1) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func3, }, 2) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func3, }, 3) # doctest: +ELLIPSIS
+        {...}
+
+        >>> pl.callForAll('THREE', y=3)
+        func3 THREE, 3
+        func3 THREE, 3
+        func3 THREE, 3
+
+        :type args: list
+        :param args: list with arguements to passed to the method to call
+
+        :type kwargs: dict
+        :param kwargs: dict with arguements to passed to the method to call
         """
         if __trace__:
             self.logger.debug('%s args %s, kwargs %s' %
@@ -891,6 +1482,43 @@ class PListFunction(PList):
         """Remove the given entry from the given priority list.
 
         It removes the given entry from the list for the given priority.
+
+        >>> def func1(): print 'func1'
+        >>> def func2(x): print 'func2 %s' % x
+        >>> def func3(x, y=0): print 'func3 %s, %s' % (x, y)
+        >>> def func4(): pass
+        >>> pl = PListFunction((1, 2, 3), 2, "custom function list")
+        >>> pl.addAtFront({'method': func1, }, 1) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func2, 'args': ('one', ), }, 2) # doctest: +ELLIPSIS
+        {...}
+        >>> pl.addAtFront({'method': func3, 'args': ('two', ), 'kwargs': {'y': 1}}, 3) # doctest: +ELLIPSIS
+        {...}
+
+        >>> pl.remove({'method': func1, }, 1) # doctest: +ELLIPSIS
+        <function func1 at 0x...>
+
+        >>> pl.remove({'method': func2, }) # doctest: +ELLIPSIS
+        <function func2 at 0x...>
+
+        >>> pl.remove({'method': func1, }, 1) # already deleted
+
+        >>> pl.remove({'method': func1, }, 3) # not found in priority
+
+        >>> pl.remove(None)
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: None
+
+        >>> pl.remove({'METHOD': func1, }) # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: {'METHOD': <function func1 at 0x...>}
+
+        >>> pl.remove({'method': 0, })
+        Traceback (most recent call last):
+        ...
+        InvalidEntryException: Not a valid entry : Entry: {'method': 0}
 
         :type entry: object
         :param entry:
@@ -917,7 +1545,7 @@ class PListFunction(PList):
             self.logger.debug('%s entry %s removed priority list %s' %
                               (info.FUNC(), entry, priority))
         retvalue = None
-        realEntry = self._getEntryFromContainer(entry, priority)
+        realEntry = self._getEntryFromContainer(entry[METHOD], priority)
         if realEntry is not None:
             self.container[priority].remove(realEntry)
             retvalue = realEntry[METHOD]
