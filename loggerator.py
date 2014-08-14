@@ -43,66 +43,77 @@ import logging
 COL_RESET       = "\x1b[0m"
 """
     :type: string
+
     Clears all colors and styles (to white on black).
 """
 
 BOLD_ON         = "\x1b[1m"
 """
-    :type BOLD_ON: string
+    :type: string
+
     Bold on.
 """
 
 ITALICS_ON      = "\x1b[3m"
 """
-    :type ITALICS_ON: string
+    :type: string
+
     Italics on.
 """
 
 UNDERLINE_ON    = "\x1b[4m"
 """
-    :type UNDERLINE_ON: string
+    :type: string
+
     Underline on.
 """
 
 INVERSE_ON      = "\x1b[7m"
 """
-    :type INVERSE_ON: string
+    :type: string
+
     Inverse on, reverses foreground & background colors.
 """
 
 STRIKETHRGH_ON  = "\x1b[9m"
 """
-    :type STRIKETHRGH_ON: string
+    :type: string
+
     Strikethrough on.
 """
 
 BOLD_OFF        = "\x1b[22m"
 """
-    :type BOLD_OFF: string
+    :type: string
+
     Bold off.
 """
 
 ITALICS_OFF     = "\x1b[23m"
 """
-    :type ITALICS_OFF: string
+    :type: string
+
     Italics off.
 """
 
 UNDERLINE_OFF   = "\x1b[24m"
 """
-    :type UNDERLINE_OFF: string
+    :type: string
+
     Underline off.
 """
 
 INVERSE_OFF     = "\x1b[27m"
 """
-    :type INVERSE_OFF: string
+    :type: string
+
     Inverse off.
 """
 
 STRIKETHRGH_OFF = "\x1b[29m"
 """
-    :type STRIKETHRGH_OFF: string
+    :type: string
+
     Strikethrough off.
 """
 
@@ -110,110 +121,128 @@ STRIKETHRGH_OFF = "\x1b[29m"
 # Foreground colors are in form of 3x, background are 4x
 FG_BLACK    = "\x1b[30m"
 """
-    :type FG_BLACK: string
+    :type: string
+
     Set foreground color to black.
 """
 
 FG_RED      = "\x1b[31m"
 """
-    :type FG_RED: string
+    :type: string
+
     Set foreground color to red.
 """
 
 FG_GREEN    = "\x1b[32m"
 """
-    :type FG_GREEN: string
+    :type: string
+
     Set foreground color to green.
 """
 
 FG_YELLOW   = "\x1b[33m"
 """
-    :type FG_YELLOW: string
+    :type: string
+
     Set foreground color to yellow.
 """
 
 FG_BLUE     = "\x1b[34m"
 """
-    :type FG_BLUE: string
+    :type: string
+
     Set foreground color to blue.
 """
 
 FG_MAGENTA  = "\x1b[35m"
 """
-    :type FG_MAGENTA: string
+    :type: string
+
     Set foreground color to magenta (purple).
 """
 
 FG_CYAN     = "\x1b[36m"
 """
-    :type FG_CYAN: string
+    :type: string
+
     Set foreground color to cyan.
 """
 
 FG_WHITE    = "\x1b[37m"
 """
-    :type FG_WHITE: string
+    :type: string
+
     Set foreground color to white.
 """
 
 FG_DEFAULT  = "\x1b[39m"
 """
-    :type FG_DEFAULT: string
+    :type: string
+
     Set foreground color to default (white).
 """
 
 
 BG_BLACK    = "\x1b[40m"
 """
-    :type BG_BLACK: string
+    :type: string
+
     Set background color to black.
 """
 
 BG_RED      = "\x1b[41m"
 """
-    :type BG_RED: string
+    :type: string
+
     Set background color to red.
 """
 
 BG_GREEN    = "\x1b[42m"
 """
-    :type BG_GREEN: string
+    :type: string
+
     Set background color to green.
 """
 
 BG_YELLOW   = "\x1b[43m"
 """
-    :type BG_YELLOW: string
+    :type: string
+
     Set background color to yellow.
 """
 
 BG_BLUE     = "\x1b[44m"
 """
-    :type BG_BLUE: string
+    :type: string
+
     Set background color to blue.
 """
 
 BG_MAGENTA  = "\x1b[45m"
 """
-    :type BG_MAGENTA: string
+    :type: string
+
     Set background color to magenta (purple).
 """
 
 BG_CYAN     = "\x1b[46m"
 """
-    :type BG_CYAN: string
+    :type: string
+
     Set background color to cyan.
 """
 
 BG_WHITE    = "\x1b[47m"
 """
-    :type BG_WHITE: string
+    :type: string
+
     Set background color to white.
 """
 
 BG_DEFAULT  = "\x1b[49m"
 """
-    :type BG_DEFAULT: string
+    :type: string
+
     Set background color to default (black).
 """
 

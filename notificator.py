@@ -365,8 +365,9 @@ class Notificator(object):
         """
         self.logger = loggerator.getLoggerator('notificator')
         """
-        :type: loggerator.Loggerator
-        :var: Variable for local logger. Disable debug logs by default.
+            :type: loggerator.Loggerator
+
+            Variable for local logger. Disable debug logs by default.
         """
 
         self.priorityValues = plist.PValuesList(priorities, defaultPriority)

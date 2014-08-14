@@ -67,50 +67,56 @@ import loggerator
 MOCK_INST_ATTR_NAME = 'mockInst'
 """
 :type: str
-:var: Attribute name to be added to every instance to be mockerated. It
-      contains the Mock instance which will track all instance calls.
+
+Attribute name to be added to every instance to be mockerated. It contains
+the Mock instance which will track all instance calls.
 """
 
 ORIG_METHOD_ATTR_NAME = 'method'
 """
 :type: str
-:var: Attribute name where the original class method will be stored in the
-      mock wrapper function.
+
+Attribute name where the original class method will be stored in the mock
+wrapper function.
 """
 
 BAK_ORIG_METHOD_ATTR_SUFIX = '_BAK'
 """
 :type: str
-:var: Suffix used for the backup attribute name where original instance method
-      is backed up.
+
+Suffix used for the backup attribute name where original instance method is
+backed up.
 """
 
 MOCK_METHOD_DICT_ATTR_NAME = '_mockAttrMethodDict'
 """
 :type: str
-:var: Attribute name where the dictionary the mocked methods are stored.
+
+Attribute name where the dictionary the mocked methods are stored.
 """
 
 RETURN_VALUE_PATTERN = 'retoValue'
 """
 :type: str
-:var: Pattern used to store method traced return values. This are stored in
-      the mock instances as calls just after the method being traced, so it is
-      easy to keep tracking that information. Return value is passed as the
-      only parameter for that call. This call has to be removed when method
-      calls are returned.
+
+Pattern used to store method traced return values. This are stored in the mock
+instances as calls just after the method being traced, so it is easy to keep
+tracking that information. Return value is passed as the only parameter for
+that call. This call has to be removed when method calls are returned.
 """
 
 verbose = False
 """
 :type: bool
-:var: Flag to display log information.
+
+Flag to display log information.
 """
 
 logger = loggerator.getLoggerator('mockerator')
 """
 :type: loggerator.Loggerator
-:var: Variable for local logger. Disable debug logs by default.
+
+Variable for local logger. Disable debug logs by default.
 """
 
 
@@ -271,7 +277,7 @@ def _includeInternalMethod(attrName, inIncludeMethod):
     :param attrName: name of the attribute being processed
 
     :type inIncludeMethod: bool
-    :param inIncludeMethodL If True, the method was passed in the include
+    :param inIncludeMethod: If True, the method was passed in the include
         method parameter, so it has to be included to be mockerated.
 
     :rtype: bool
@@ -307,12 +313,13 @@ def _getMethodEntryInDict(instance,
     :type attrName: str
     :param attrName: name of the attribute being processed
 
-    :type includeMethods: list, tuple, dict or None
-    :param includeMethods: List/Tuple/Dictionary with methods to be mockerated.
-        Only these methods will be mockerated, any other instance method will
-        be excluded. Dictionary keys are method names and value could be None
-        or it could a custom method replacing the instance method, it means,
-        that will be the method to be called instead of the instance method.
+    :type inIncludeMethod: list, tuple, dict or None
+    :param inIncludeMethod: List/Tuple/Dictionary with methods to be
+        mockerated. Only these methods will be mockerated, any other instance
+        method will be excluded. Dictionary keys are method names and value
+        could be None or it could a custom method replacing the instance
+        method, it means, that will be the method to be called instead of the
+        instance method.
 
     :type mockFuncFlag: bool
     :param mockFuncFlag: if True, all instance methods will be fully
@@ -321,7 +328,7 @@ def _getMethodEntryInDict(instance,
 
     :rtype: dict
     :return: Dictionary containing  'method' as the instance method attribute
-    and 'flag' as a boolean showing is method is mocked or really called.
+        and 'flag' as a boolean showing is method is mocked or really called.
     """
     attr = getattr(instance, attrName)
     #if attrName == '__init__' or\
@@ -472,9 +479,9 @@ def generateMethodsToProcess(instance,
         but real method will be called and executed.
 
     :rtype: dict
-    :return: Dictionary where keys are methods being processed and value
-    is other dictionary containing  'method' as the instance method attribute
-    and 'flag' as a boolean showing is method is mocked or really called.
+    :return: Dictionary where keys are methods being processed and value is
+        other dictionary containing  'method' as the instance method attribute
+        and 'flag' as a boolean showing is method is mocked or really called.
     """
     includeMethods   = includeMethods if includeMethods else []
     methodsToProcess = {}
