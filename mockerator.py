@@ -28,6 +28,15 @@ method name), so that new implementation will be the one being called.
 
 Interface allows to define a list of methods that will not be mockerated,
 so those calls will not be traced either.
+
+New incterface provides the capability to mockerate all instance for a given
+class. Module will search for all instaces created at that point for the given
+class and it will subscribe to the mockerator every one of them with
+parameters given in the interface. Any further adjustment should be dome over
+every instance in particular.
+
+The list with all registered instances is returned by the interface for further
+handling.
 """
 
 __docformat__ = 'restructuredtext en'
@@ -46,12 +55,12 @@ __docformat__ = 'restructuredtext en'
 
 from functools import WRAPPER_ASSIGNMENTS
 import datetime
+import mock
 import gc
 
 #
 # import user python modules
 #
-import mock
 import loggerator
 
 ###############################################################################
@@ -132,6 +141,17 @@ Variable for local logger. Disable debug logs by default.
 
 # =============================================================================
 def invertXGround(xground):
+    """ Swap foreground and background values between each other.
+
+    >>> invertXGround('BG')
+    'FG'
+
+    >>> invertXGround('FG')
+    'BG'
+
+    :type xground: str
+    :param xground: Foreground and backgound.
+    """
     if xground == 'BG':
         return 'FG'
     else:
@@ -140,18 +160,130 @@ def invertXGround(xground):
 
 # =============================================================================
 def logDebug(txt, colour=None, mode='FG', flag=False):
+    """ Log debug information if required
+
+    >>> import mockerator as m
+    >>> m.verbose = False
+    >>> m.logger  = mock.Mock()
+    >>> m.logDebug('DEBUG')
+    >>> m.logger.debug.assert_called_once_with('DEBUG', None, 'FG')
+    Traceback (most recent call last):
+    ...
+    AssertionError: Expected to be called once. Called 0 times.
+
+    >>> m.logger = mock.Mock()
+    >>> m.logDebug('DEBUG', flag=True)
+    >>> m.logger.debug.assert_called_once_with('DEBUG', None, 'FG')
+
+    >>> m.verbose = True
+    >>> m.logger = mock.Mock()
+    >>> m.logDebug('DEBUG')
+    >>> m.logger.debug.assert_called_once_with('DEBUG', None, 'FG')
+
+    >>> m.logger = mock.Mock()
+    >>> m.logDebug('DEBUG', 'BLUE', 'BG')
+    >>> m.logger.debug.assert_called_once_with('DEBUG', 'BLUE', 'BG')
+
+    :type txt: str
+    :param txt: Text string to be logged for debug
+
+    :type colour: str
+    :param colour: color to display debug log information
+
+    :type mode: str
+    :param mode: apply given color to foreground or background text
+
+    :type flag: bool
+    :param flag: force text to be logged even if global verbose is disabled
+    """
     if flag or verbose:
         logger.debug(txt, colour, mode)
 
 
 # =============================================================================
 def logInfo(txt, colour=None, mode='FG', flag=False):
+    """ Log info information if required
+
+    >>> import mockerator as m
+    >>> m.verbose = False
+    >>> m.logger  = mock.Mock()
+    >>> m.logInfo('INFO')
+    >>> m.logger.info.assert_called_once_with('INFO', None, 'FG')
+    Traceback (most recent call last):
+    ...
+    AssertionError: Expected to be called once. Called 0 times.
+
+    >>> m.logger = mock.Mock()
+    >>> m.logInfo('INFO', flag=True)
+    >>> m.logger.info.assert_called_once_with('INFO', None, 'FG')
+
+    >>> m.verbose = True
+    >>> m.logger = mock.Mock()
+    >>> m.logInfo('INFO')
+    >>> m.logger.info.assert_called_once_with('INFO', None, 'FG')
+
+    >>> m.logger = mock.Mock()
+    >>> m.logInfo('INFO', 'BLUE', 'BG')
+    >>> m.logger.info.assert_called_once_with('INFO', 'BLUE', 'BG')
+
+    :type txt: str
+    :param txt: Text string to be logged for info
+
+    :type colour: str
+    :param colour: color to display info log information
+
+    :type mode: str
+    :param mode: apply given color to foreground or background text
+
+    :type flag: bool
+    :param flag: force text to be logged even if global verbose is disabled
+    """
     if flag or verbose:
         logger.info(txt, colour, mode)
 
 
 # =============================================================================
 def logError(txt, colour=None, mode='FG', flag=True):
+    """ Log error information if required
+
+    >>> import mockerator as m
+    >>> m.verbose = False
+    >>> m.logger  = mock.Mock()
+    >>> m.logError('ERROR')
+    >>> m.logger.error.assert_called_once_with('ERROR', None, 'FG')
+
+    >>> m.logger  = mock.Mock()
+    >>> m.logError('ERROR', flag=False)
+    >>> m.logger.error.assert_called_once_with('ERROR', None, 'FG')
+    Traceback (most recent call last):
+    ...
+    AssertionError: Expected to be called once. Called 0 times.
+
+    >>> m.logger = mock.Mock()
+    >>> m.logError('ERROR', flag=True)
+    >>> m.logger.error.assert_called_once_with('ERROR', None, 'FG')
+
+    >>> m.verbose = True
+    >>> m.logger = mock.Mock()
+    >>> m.logError('ERROR')
+    >>> m.logger.error.assert_called_once_with('ERROR', None, 'FG')
+
+    >>> m.logger = mock.Mock()
+    >>> m.logError('ERROR', 'BLUE', 'BG')
+    >>> m.logger.error.assert_called_once_with('ERROR', 'BLUE', 'BG')
+
+    :type txt: str
+    :param txt: Text string to be logged for error
+
+    :type colour: str
+    :param colour: color to display error log information
+
+    :type mode: str
+    :param mode: apply given color to foreground or background text
+
+    :type flag: bool
+    :param flag: force text to be logged even if global verbose is disabled
+    """
     if flag:
         logger.error(txt, colour, mode)
 
@@ -205,6 +337,8 @@ def mockerator(instance,
     :param watermark: Pattern to be logged at the start of the line.
     """
 
+    # Inner method
+    # =========================================================================
     def mockWrapper(*args, **kwargs):
         """ Mockerator decorator wrapper.
 
@@ -214,8 +348,8 @@ def mockerator(instance,
         :type kwargs: dict
         :param kwargs: Dictionary of arguments to be passed to the method.
         """
-        pattern      = "[%s] Mockerator" % (watermark, ) if watermark else "Mockerator"
-        retoValue     = None
+        pattern   = "[%s] Mockerator" % (watermark, ) if watermark else "Mockerator"
+        retoValue = None
         mockInstance = getattr(instance, MOCK_INST_ATTR_NAME, None)
         if not mockInstance:
             func = getattr(instance, methodName)
@@ -246,14 +380,20 @@ def mockerator(instance,
         else:
             logInfo('%s %s I am mocking %s.%s (%s, %s)' %
                     (mockTimeNow, pattern, instance.__class__.__name__,
-                        methodName, args, kwargs), color['co'], invertXGround(color['xground']))
+                     methodName, args, kwargs), color['co'],
+                    invertXGround(color['xground']))
         if postMethod:
             reto = postMethod(retoValue, *args, **kwargs)
             retoValue = reto if reto else retoValue
 
-        getattr(mockInstance, RETURN_VALUE_PATTERN, None)(retoValue, methodName, *args, **kwargs)
+        getattr(mockInstance, RETURN_VALUE_PATTERN, None)(retoValue,
+                                                          methodName,
+                                                          *args,
+                                                          **kwargs)
         return retoValue
 
+    # Method main body
+    # =========================================================================
     color = {'co': 'GREEN', 'xground': 'FG'} if color is None else color
     # Save the instance method inside a wrapper attribute in order to be
     # able to called inside the wrapper call.
@@ -272,6 +412,18 @@ def _includeInternalMethod(attrName, inIncludeMethod):
 
     By default internal method will not be mockerated, unless it is forced by
     passed the method in the includeMethod attribute.
+
+    >>> _includeInternalMethod('theMethod', True)
+    True
+
+    >>> _includeInternalMethod('theMethod', False)
+    True
+
+    >>> _includeInternalMethod('_theMethod', True)
+    True
+
+    >>> _includeInternalMethod('_theMethod', False)
+    False
 
     :type attrName: str
     :param attrName: name of the attribute being processed
@@ -306,6 +458,27 @@ def _getMethodEntryInDict(instance,
 
     The second entry in the dictionary is a flag that indicates if the method
     should be just traced (False) or fully mocked (True).
+
+    >>> class Test(object):
+    ...     def _internal(self): pass
+    ...     def external(self): pass
+    >>> t = Test()
+    >>> _getMethodEntryInDict(t, '_internal')
+
+    >>> _getMethodEntryInDict(t, '_internal', inIncludeMethod=True) # doctest: +ELLIPSIS
+    {'flag': False, 'method': <bound method Test._internal of <__main__.Test object at 0x...>>}
+
+    >>> _getMethodEntryInDict(t, '_internal', inIncludeMethod=True, mockFuncFlag=True) # doctest: +ELLIPSIS
+    {'flag': True, 'method': <bound method Test._internal of <__main__.Test object at 0x...>>}
+
+    >>> _getMethodEntryInDict(t, 'external') # doctest: +ELLIPSIS
+    {'flag': False, 'method': <bound method Test.external of <__main__.Test object at 0x...>>}
+
+    >>> _getMethodEntryInDict(t, 'external', inIncludeMethod=True, mockFuncFlag=True) # doctest: +ELLIPSIS
+    {'flag': True, 'method': <bound method Test.external of <__main__.Test object at 0x...>>}
+
+    >>> _getMethodEntryInDict(t, 'external', mockFuncFlag=True) # doctest: +ELLIPSIS
+    {'flag': True, 'method': <bound method Test.external of <__main__.Test object at 0x...>>}
 
     :type instance: object
     :param instance: Instance to be mockerated.
@@ -348,6 +521,9 @@ def _getBackupMethodName(attrName):
     It returns the name for the attribute where the original instance method
     is backed up when a new method is provided when attached to the mockerator.
 
+    >>> _getBackupMethodName('theMethod')
+    'theMethod_BAK'
+
     :type attrName: str
     :param attrName: Attribute name
     """
@@ -361,6 +537,11 @@ def _getAttrNameFromBackupAttr(bakAttrName):
     It returns the attribute name for a backup attribute. The attribute name
     is the attribute where the original method was placed and it was store
     in the backup attribute.
+
+    >>> _getAttrNameFromBackupAttr('theAttr_BAK')
+    'theAttr'
+
+    >>> _getAttrNameFromBackupAttr('theAttr')
 
     :type bakAttrName: str
     :param bakAttrName: Backup attribute name
@@ -513,9 +694,9 @@ def generateMethodsToProcess(instance,
                     _replaceInstanceAttrMethod(instance, attrName, value)
 
         if not attrName in excludeSequence:
-            # When method attribute values are returned by this method, any method
-            # being replaced, has been replaced at this point, so the replacement
-            # will be returned in the 'method' value.
+            # When method attribute values are returned by this method, any
+            # method # being replaced, has been replaced at this point, so the
+            # replacement will be returned in the 'method' value.
             entry = _getMethodEntryInDict(instance,
                                           attrName,
                                           flag,
@@ -986,7 +1167,7 @@ def logMethodCalls(instance):
     :param instance: Instance being mockerated.
     """
     logInfo('', 'MAGENTA', 'FG', flag=True)
-    logInfo('Methods Called by instance [%s]' % (instance, ), 'MAGENTA', 'FG', flag=True)
+    logInfo('Called by instance [%s]' % (instance, ), 'MAGENTA', 'FG', flag=True)
     #logInfo('%s' % (getMethodCalls(instance), ), 'MAGENTA', 'FG', flag=True)
     for methodCall in getMethodCalls(instance):
         logInfo('%s' % (methodCall, ), 'MAGENTA', 'FG', flag=True)
@@ -994,7 +1175,6 @@ def logMethodCalls(instance):
 
 # =============================================================================
 def check(pattern, instance=None, tested=None, result=None):
-    #import ipdb
     import traceback
     import sys
     import inspect
@@ -1007,9 +1187,6 @@ def check(pattern, instance=None, tested=None, result=None):
                 continue
             attr = getattr(instance, name, None)
             if attr is not None:
-                #print 'testing %s' % attr
-                #(inspect.ismodule(attr) and
-                # not 'usr/lib/python' in inspect.getsourcefile(attr)) and\
                 if not inspect.isclass(attr) and\
                         not inspect.isfunction(attr) and\
                         not inspect.isbuiltin(attr) and\
