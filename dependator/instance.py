@@ -66,6 +66,7 @@ class Instance(object):
     """ Class were instance are stored
     """
 
+    # =========================================================================
     def __init__(self, theName):
         """ Instance initialization
 
@@ -134,6 +135,12 @@ class Instance(object):
         self.instInDeps = plist.PList(Priority.PRIOS, Priority.DEFAULT)
         self.attrDeps   = plist.PList(Priority.PRIOS, Priority.DEFAULT)
         self.attrInDeps = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+
+    # =========================================================================
+    def addInstanceDependecy(self, theName):
+        """
+        """
+        pass
 
 
 ###############################################################################

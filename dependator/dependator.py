@@ -27,9 +27,9 @@ __docformat__ = 'restructuredtext en'
 #
 #import plist
 from state import State
-#from priority import Priority
+from priority import Priority
 from instance import Instance
-#from depForInstance import DepForInstance
+from depForInstance import DepForInstance
 #from depForAttribute import DepForAttribute
 
 
@@ -94,8 +94,20 @@ class Dependator(object):
 
         >>> dep = Dependator()
 
-        >>> dep.instances # doctest: +ELLIPSIS
+        >>> dep.instances
         {}
+
+        >>> dep.instDependencies
+        {}
+
+        >>> dep.attrDependencies
+        {}
+
+        >>> dep.instID
+        0
+
+        >>> dep.attrID
+        0
 
         """
         self.instances = {}
@@ -103,6 +115,34 @@ class Dependator(object):
         :type: dict
 
         It stores all instances registered to the dependator
+        """
+
+        self.instDependencies = {}
+        """
+        :type: dict
+
+        It stores all instance dependencies entries
+        """
+
+        self.attrDependencies = {}
+        """
+        :type: dict
+
+        It stores all attribute dependencies entries
+        """
+
+        self.instID = 0
+        """
+        :type: int
+
+        It is the id for any new instance dependency
+        """
+
+        self.attrID = 0
+        """
+        :type: int
+
+        It is the id for any new attribute dependency
         """
 
     # =========================================================================
@@ -498,29 +538,144 @@ class Dependator(object):
         return State.DELETED == self.getInstanceState(theInstName)
 
     # =========================================================================
-    def setDependency(self, theInstName):
+    def _validateAllInstances(self, theInstName, theDeps):
+        """ Validate all instances have been registered
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('THREE') # doctest: +ELLIPSIS
+        <...>
+
+        >>> dep._validateAllInstances('ONE', ('TWO', 'THREE'))
+        True
+
+        >>> dep._validateAllInstances('ONE', ('TWO', ))
+        True
+
+        >>> dep._validateAllInstances('one', ('two', 'three'))
+        False
+
+        >>> dep._validateAllInstances('ONE', ('TWO', 'THREE', 'FOUR'))
+        False
+
+        :type theInstName: str
+        :param theInstName: Instance name
+
+        :type theDeps: tuple
+        :param theDeps: List with all dependencies
+
+        :rtype: bool
+        :return: True if all instance are registered else False
+        """
+        lista = list(theDeps)
+        lista.append(theInstName)
+        result = map(lambda x: x in self.instances, lista)
+        return all(result)
+
+    # =========================================================================
+    def _lookForInstAndDeps(self, theInstName, theDeps):
+        """ Check if the same instance and dependecies are already registered
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.instDependencies[1] = DepForInstance(1, 'ONE', ('TWO', ), {})
+        >>> dep.instDependencies[2] = DepForInstance(2, 'ONE', ('TWO', 'THREE'), {})
+
+        >>> dep._lookForInstAndDeps('ONE', ('TWO', ))
+        True
+
+        >>> dep._lookForInstAndDeps('ONE', ('THREE', ))
+        False
+
+        :type theInstName: str
+        :param theInstName: Instance name to look for
+
+        :type theDeps: tuple
+        :param theDeps: List with all dependencies to look for
+
+        :rtype: bool
+        :return: True if the same instance and dependencies are found else
+        False
+        """
+        for id, dep in self.instDependencies.iteritems():
+            if dep.match(theInstName, theDeps):
+                return True
+        return False
+
+    # =========================================================================
+    def setDependency(self,
+                      theInstName,
+                      theDeps,
+                      theCallbacks,
+                      thePriority=Priority.DEFAULT):
         """ Set a dependency for the given instace
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+
+        >>> dep.setDependency('ONE', ('TWO', ), {})
+        1
+
+        >>> dep.instDependencies[1].instName
+        'ONE'
+
+        >>> dep.instDependencies[1].deps
+        ['TWO']
+
+        Can not register the same dependency again
+        >>> dep.setDependency('ONE', ('TWO', ), {})
 
         :type theInstName: str
         :param theInstName: Instance name to set dependency
+
+        :type theDeps: tuple
+        :param theDeps: List with all dependencies
+
+        :type theCallbacks: dict
+        :param theCallbacks: Dictionary with callbacks for every notification
+
+        :type thePriority: Priority
+        :param thePriority: Priority for callback notifications
+
+        :rtype: int
+        :return: ID for the new dependency entry created
         """
-        pass
+        if self._validateAllInstances(theInstName, theDeps) and\
+           not self._lookForInstAndDeps(theInstName, theDeps):
+            self.instID = self.instID + 1
+            instDep = DepForInstance(self.instID,
+                                     theInstName,
+                                     theDeps,
+                                     theCallbacks,
+                                     thePriority)
+            self.instDependencies[self.instID] = instDep
+            return self.instID
+        return None
 
     # =========================================================================
-    def getDependency(self, theInstName):
+    def getDependency(self, theId):
         """ Get dependency for the given instance
 
-        :type theInstName: str
-        :param theInstName: Instance name to get dependency
+        :type theId: int
+        :param theId: ID that identified the dependency
         """
         pass
 
     # =========================================================================
-    def clearDependency(self, theInstName):
+    def clearDependency(self, theId):
         """ Clear dependencyu for the given instance
 
-        :type theInstName: str
-        :param theInstName: Instance name to clear dependency
+        :type theId: int
+        :param theId: ID that identified the dependency
         """
         pass
 
