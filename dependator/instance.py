@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-""" priority.py contains class Priority, which is the Dependator instance
-priority list.
+""" instance.py contains class Instance, which is the dependator instance.
 
 :author:    Jose Carlos Recuero
 :version:   0.1
@@ -25,6 +24,9 @@ __docformat__ = 'restructuredtext en'
 #
 # import user defined python modules
 #
+import plist
+from state import State
+from priority import Priority
 
 
 ###############################################################################
@@ -60,60 +62,78 @@ __docformat__ = 'restructuredtext en'
 #
 # =============================================================================
 #
-class Priority(object):
-    """ Dependator priorities
-
-    >>> Priority.HIGH
-    1
-
-    >>> Priority.MED
-    2
-
-    >>> Priority.LOW
-    3
-
-    >>> Priority.DEFAULT
-    2
-
-    >>> Priority.PRIOS
-    (1, 2, 3)
-
+class Instance(object):
+    """ Class were instance are stored
     """
 
-    HIGH = 1
-    """
-    :type: int
+    def __init__(self, theName):
+        """ Instance initialization
 
-    High priority
-    """
+        >>> inst = Instance('INSTANCE')
 
-    MED  = 2
-    """
-    :type: int
+        >>> inst.name
+        'INSTANCE'
 
-    Medioum priority
-    """
+        >>> inst.state
+        0
 
-    LOW  = 3
-    """
-    :type: int
+        >>> inst.instDeps # doctest: +ELLIPSIS
+        <plist.PList object at 0x...>
 
-    Low priority
-    """
+        >>> inst.instDeps.getAllLists()
+        [[], [], []]
 
-    DEFAULT = MED
-    """
-    :type: int
+        >>> inst.instDeps.priorityValues.getList()
+        (1, 2, 3)
 
-    Defaule priority (Medium)
-    """
+        >>> inst.instDeps.priorityValues.getDefault()
+        2
 
-    PRIOS = (HIGH, MED, LOW)
-    """
-    :type: tuple
+        >>> inst.instInDeps # doctest: +ELLIPSIS
+        <plist.PList object at 0x...>
 
-    List of priorities
-    """
+        >>> inst.instInDeps.getAllLists()
+        [[], [], []]
+
+        >>> inst.instInDeps.priorityValues.getList()
+        (1, 2, 3)
+
+        >>> inst.instInDeps.priorityValues.getDefault()
+        2
+
+        >>> inst.attrDeps # doctest: +ELLIPSIS
+        <plist.PList object at 0x...>
+
+        >>> inst.attrDeps.getAllLists()
+        [[], [], []]
+
+        >>> inst.attrDeps.priorityValues.getList()
+        (1, 2, 3)
+
+        >>> inst.attrDeps.priorityValues.getDefault()
+        2
+
+        >>> inst.attrInDeps # doctest: +ELLIPSIS
+        <plist.PList object at 0x...>
+
+        >>> inst.attrInDeps.getAllLists()
+        [[], [], []]
+
+        >>> inst.attrInDeps.priorityValues.getList()
+        (1, 2, 3)
+
+        >>> inst.attrInDeps.priorityValues.getDefault()
+        2
+
+        :type theName: str
+        :param theName: Name of the instace
+        """
+        self.name       = theName
+        self.state      = State.NONE
+        self.instDeps   = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.instInDeps = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrDeps   = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrInDeps = plist.PList(Priority.PRIOS, Priority.DEFAULT)
 
 
 ###############################################################################
