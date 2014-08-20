@@ -147,6 +147,20 @@ class DepForInstance(object):
         """
 
     # =========================================================================
+    def __str__(self):
+        """ Return string to be displayed when instance is printed
+
+        >>> di = DepForInstance(1, 'ME', ('YOU', 'HIM'), {'actived': True})
+        >>> print di
+        1 : 'ME' : ['HIM', 'YOU'] : {'actived': True} : 2
+
+        :rtype: str
+        :return: String that represents the instance
+        """
+        return "%d : %s : %s : %s : %s" %\
+            (self.id, self.instName, self.deps, self.callbacks, self.priority)
+
+    # =========================================================================
     def match(self, theInstName, theDeps):
         """ Match same instance and dependecies with given values
 

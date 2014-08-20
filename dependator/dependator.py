@@ -153,51 +153,16 @@ class Dependator(object):
         Notificator instance for handling all notification callbacks
         """
 
-        self.triggerMethod = {State.NONE:    self.triggerNone,
-                              State.CREATED: self.triggerCreated,
-                              State.ACTIVED: self.triggerActived,
-                              State.WAITING: self.triggerWaiting,
-                              State.PAUSED:  self.triggerPaused,
-                              State.DELETED: self.triggerDeleted, }
-
     # =========================================================================
-    def triggerNone(self, theInstName, *args, **kwargs):
+    def triggerHandler(self, theInstName, theState,  *args, **kwargs):
         """
         """
-        pass
-
-    # =========================================================================
-    def triggerCreated(self, theInstName, *args, **kwargs):
-        """
-        """
-        pass
-
-    # =========================================================================
-    def triggerActived(self, theInstName, *args, **kwargs):
-        """
-        """
-        instance = self.instances[theInstName]
-        #print theInstName
-        #print self.instances[theInstName].instDeps.container
-        #print self.instances[theInstName].instInDeps.container
-
-    # =========================================================================
-    def triggerWaiting(self, theInstName, *args, **kwargs):
-        """
-        """
-        pass
-
-    # =========================================================================
-    def triggerPaused(self, theInstName, *args, **kwargs):
-        """
-        """
-        pass
-
-    # =========================================================================
-    def triggerDeleted(self, theInstName, *args, **kwargs):
-        """
-        """
-        pass
+        instance  = self.instances[theInstName]
+        allInDeps = instance.instInDeps.getAllLists()
+        for inDeps in allInDeps:
+            for inDepID in inDeps:
+                dep = self.instDependencies[inDepID]
+                dep.callbacks[theState](dep.instName, dep.deps, *args, **kwargs)
 
     # =========================================================================
     def registerInstance(self, theInstName):
@@ -226,7 +191,7 @@ class Dependator(object):
 
         # register notificator triggers for state changes
         for st in State.ALL:
-            result = self.notificator.registerTrigger(self.triggerMethod[st], theInstName)
+            result = self.notificator.registerTrigger(self.triggerHandler, theInstName, st)
             instance.triggers[st] = result[notificator.ID]
 
         self.instances[theInstName] = instance
@@ -257,7 +222,7 @@ class Dependator(object):
         return None
 
     # =========================================================================
-    def _setState(self, theInstName, theState):
+    def setState(self, theInstName, theState, theNotify=True, *args, **kwargs):
         """ Change instance state to the given state
 
         >>> dep = Dependator()
@@ -265,43 +230,70 @@ class Dependator(object):
         >>> instance.state
         0
 
-        >>> dep._setState("NOT INST", State.CREATED)
+        >>> import mock
+        >>> dep.notificator = mock.Mock()
+        >>> dep.setState("NOT INST", State.CREATED)
         False
 
-        >>> dep._setState("INST", State.CREATED)
+        Check the trigger is called by default
+        >>> dep.setState("INST", State.CREATED)
         True
         >>> instance.state
         1
+        >>> dep.notificator.runTrigger.called
+        True
 
-        >>> dep._setState("INST", State.ACTIVED)
+        Check the trigger is not called when theNotify flag is set to False
+        >>> dep.notificator = mock.Mock()
+        >>> dep.setState("INST", State.CREATED, False)
+        True
+        >>> instance.state
+        1
+        >>> dep.notificator.runTrigger.called
+        False
+
+        >>> dep.setState("INST", State.ACTIVED)
         True
         >>> instance.state
         2
 
-        >>> dep._setState("INST", State.WAITING)
+        >>> dep.setState("INST", State.WAITING)
         True
         >>> instance.state
         3
 
-        >>> dep._setState("INST", State.PAUSED)
+        >>> dep.setState("INST", State.PAUSED)
         True
         >>> instance.state
         4
 
-        >>> dep._setState("INST", State.DELETED)
+        >>> dep.setState("INST", State.DELETED)
         True
         >>> instance.state
         5
+
 
         :type theInstName: str
         :param theInstName: Instance name to change state
 
         :type theState: State
         :param theState: New state to set the given instance
+
+        :type theNotify: bool
+        :param theNotify: Flag to show if notification show be called
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         if theInstName in self.instances:
             instance = self.instances[theInstName]
             instance.state = theState
+            if theNotify:
+                self.notificator.runTrigger(instance.triggers[theState],
+                                            theInstName,
+                                            theState,
+                                            *args,
+                                            **kwargs)
             return True
         return False
 
@@ -322,10 +314,10 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
-        return self._setState(theInstName, State.CREATED)
+        return self.setState(theInstName, State.CREATED, True)
 
     # =========================================================================
-    def notifyActived(self, theInstName):
+    def notifyActived(self, theInstName, *args, **kwargs):
         """ Notify instance change to Actived state
 
         >>> dep = Dependator()
@@ -341,9 +333,7 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
-        instance = self.instances[theInstName]
-        self.notificator.runTrigger(instance.triggers[State.ACTIVED])
-        return self._setState(theInstName, State.ACTIVED)
+        return self.setState(theInstName, State.ACTIVED, True, *args, **kwargs)
 
     # =========================================================================
     def notifyWaiting(self, theInstName):
@@ -362,7 +352,7 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
-        return self._setState(theInstName, State.WAITING)
+        return self.setState(theInstName, State.WAITING, True)
 
     # =========================================================================
     def notifyPaused(self, theInstName):
@@ -381,7 +371,7 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
-        return self._setState(theInstName, State.PAUSED)
+        return self.setState(theInstName, State.PAUSED, True)
 
     # =========================================================================
     def notifyDeleted(self, theInstName):
@@ -400,7 +390,7 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
-        return self._setState(theInstName, State.DELETED)
+        return self.setState(theInstName, State.DELETED, True)
 
     # =========================================================================
     def notifyDestroyed(self, theInstName):
@@ -419,7 +409,7 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
-        return self._setState(theInstName, State.NONE)
+        return self.setState(theInstName, State.NONE, True)
 
     # =========================================================================
     def getInstanceState(self, theInstName):
@@ -684,7 +674,7 @@ class Dependator(object):
         >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
         <...>
 
-        >>> dep.setDependency('ONE', ('TWO', ), {})
+        >>> dep.setDependency('ONE', ('TWO', ), {State.ACTIVED: lambda x, y, z=None: (x, y, z)})
         1
 
         >>> dep.instDependencies[1].instName
@@ -693,7 +683,7 @@ class Dependator(object):
         >>> dep.instDependencies[1].deps
         ['TWO']
 
-        >>> dep.notifyActived('TWO')
+        >>> dep.notifyActived('TWO', 'instance active')
         True
 
         Can not register the same dependency again
