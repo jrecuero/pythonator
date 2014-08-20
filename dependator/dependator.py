@@ -26,6 +26,7 @@ __docformat__ = 'restructuredtext en'
 # import user defined python modules
 #
 #import plist
+import notificator
 from state import State
 from priority import Priority
 from instance import Instance
@@ -145,6 +146,59 @@ class Dependator(object):
         It is the id for any new attribute dependency
         """
 
+        self.notificator = notificator.Notificator(Priority.PRIOS, Priority.DEFAULT)
+        """
+        :type: notificator.Notificator
+
+        Notificator instance for handling all notification callbacks
+        """
+
+        self.triggerMethod = {State.NONE:    self.triggerNone,
+                              State.CREATED: self.triggerCreated,
+                              State.ACTIVED: self.triggerActived,
+                              State.WAITING: self.triggerWaiting,
+                              State.PAUSED:  self.triggerPaused,
+                              State.DELETED: self.triggerDeleted, }
+
+    # =========================================================================
+    def triggerNone(self, theInstName, *args, **kwargs):
+        """
+        """
+        pass
+
+    # =========================================================================
+    def triggerCreated(self, theInstName, *args, **kwargs):
+        """
+        """
+        pass
+
+    # =========================================================================
+    def triggerActived(self, theInstName, *args, **kwargs):
+        """
+        """
+        instance = self.instances[theInstName]
+        #print theInstName
+        #print self.instances[theInstName].instDeps.container
+        #print self.instances[theInstName].instInDeps.container
+
+    # =========================================================================
+    def triggerWaiting(self, theInstName, *args, **kwargs):
+        """
+        """
+        pass
+
+    # =========================================================================
+    def triggerPaused(self, theInstName, *args, **kwargs):
+        """
+        """
+        pass
+
+    # =========================================================================
+    def triggerDeleted(self, theInstName, *args, **kwargs):
+        """
+        """
+        pass
+
     # =========================================================================
     def registerInstance(self, theInstName):
         """ Register instance to dependator
@@ -169,6 +223,12 @@ class Dependator(object):
         if theInstName in self.instances:
             return None
         instance = Instance(theInstName)
+
+        # register notificator triggers for state changes
+        for st in State.ALL:
+            result = self.notificator.registerTrigger(self.triggerMethod[st], theInstName)
+            instance.triggers[st] = result[notificator.ID]
+
         self.instances[theInstName] = instance
         return instance
 
@@ -281,6 +341,8 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to change state
         """
+        instance = self.instances[theInstName]
+        self.notificator.runTrigger(instance.triggers[State.ACTIVED])
         return self._setState(theInstName, State.ACTIVED)
 
     # =========================================================================
@@ -631,6 +693,9 @@ class Dependator(object):
         >>> dep.instDependencies[1].deps
         ['TWO']
 
+        >>> dep.notifyActived('TWO')
+        True
+
         Can not register the same dependency again
         >>> dep.setDependency('ONE', ('TWO', ), {})
 
@@ -658,6 +723,9 @@ class Dependator(object):
                                      theCallbacks,
                                      thePriority)
             self.instDependencies[self.instID] = instDep
+            self.instances[theInstName].addInstanceDependency(self.instID)
+            for instInDep in theDeps:
+                self.instances[instInDep].addInstanceInDependency(self.instID)
             return self.instID
         return None
 

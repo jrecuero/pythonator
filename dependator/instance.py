@@ -129,18 +129,27 @@ class Instance(object):
         :type theName: str
         :param theName: Name of the instace
         """
-        self.name       = theName
-        self.state      = State.NONE
-        self.instDeps   = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-        self.instInDeps = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-        self.attrDeps   = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-        self.attrInDeps = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.name        = theName
+        self.state       = State.NONE
+        self.instDeps    = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.instInDeps  = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrDeps    = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrInDeps  = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.triggers    = {}
+        for st in State.ALL:
+            self.triggers[st] = None
 
     # =========================================================================
-    def addInstanceDependecy(self, theName):
+    def addInstanceDependency(self, theInstID):
         """
         """
-        pass
+        self.instDeps.addAtFront(theInstID)
+
+    # =========================================================================
+    def addInstanceInDependency(self, theInstID):
+        """
+        """
+        self.instInDeps.addAtFront(theInstID)
 
 
 ###############################################################################

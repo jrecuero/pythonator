@@ -80,6 +80,9 @@ class State(object):
     >>> State.DELETED
     5
 
+    >>> State.ALL
+    (0, 1, 2, 3, 4, 5)
+
     """
 
     NONE    = 0
@@ -122,6 +125,13 @@ class State(object):
     :type: int
 
     Instance Delete state. This is the last state in the life cycle
+    """
+
+    ALL = (NONE, CREATED, ACTIVED, WAITING, PAUSED, DELETED)
+    """
+    :type: tuple
+
+    List with all possible states
     """
 
 ###############################################################################
