@@ -25,12 +25,13 @@ __docformat__ = "restructuredtext en"
 # import std python modules
 #
 import unittest
-#import mock
+import mock
 
 #
 # import user defined python modules
 #
-#import dependator.dependator as dep
+from dependator.state import State
+import dependator.dependator as dep
 
 
 ###############################################################################
@@ -58,7 +59,8 @@ def TestDependatorSuite():
     """ Unit test suite for runing Pluginator unit tests.
     """
     suite = unittest.TestSuite()
-    suite.addTest(TestDependator('test_init'))
+    suite.addTest(TestDependator('test_NotificationWithOneInstanceDependency'))
+    suite.addTest(TestDependator('test_NotificationWithTwoInstanceDependency'))
     return suite
 
 
@@ -85,7 +87,7 @@ class TestDependator(unittest.TestCase):
 
         It sets up all functionality required for running TestDependator.
         """
-        pass
+        self.dep = dep.Dependator()
 
     # =========================================================================
     def tearDown(self):
@@ -96,10 +98,225 @@ class TestDependator(unittest.TestCase):
         pass
 
     # =========================================================================
-    def test_init(self):
+    def test_NotificationWithOneInstanceDependency(self):
         """
+        Test Basic notifications being triggered by dependator
         """
-        pass
+        self.dep.registerInstance('ONE:1')
+        self.dep.registerInstance('TWO:2')
+
+        notification = mock.Mock()
+        self.dep.setDependency('ONE:1', ('TWO:2', ), {State.NONE:    notification.none,
+                                                      State.CREATED: notification.created,
+                                                      State.ACTIVED: notification.actived,
+                                                      State.WAITING: notification.waiting,
+                                                      State.PAUSED:  notification.paused,
+                                                      State.DELETED: notification.deleted, })
+
+        self.dep.notifyCreated('ONE:1')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyCreated('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertTrue(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyActived('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertTrue(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyWaiting('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertTrue(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyPaused('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertTrue(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyDeleted('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertTrue(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyDestroyed('TWO:2')
+        self.assertTrue(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+    # =========================================================================
+    def test_NotificationWithTwoInstanceDependency(self):
+        """
+        Test Basic notifications being triggered by dependator
+        """
+        self.dep.registerInstance('ONE:1')
+        self.dep.registerInstance('TWO:2')
+        self.dep.registerInstance('THREE:3')
+
+        notification = mock.Mock()
+        self.dep.setDependency('ONE:1',
+                               ('TWO:2', 'THREE:3'),
+                               {State.NONE:    notification.none,
+                                State.CREATED: notification.created,
+                                State.ACTIVED: notification.actived,
+                                State.WAITING: notification.waiting,
+                                State.PAUSED:  notification.paused,
+                                State.DELETED: notification.deleted, })
+
+        self.dep.notifyCreated('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyCreated('THREE:3')
+        self.assertFalse(notification.none.called)
+        self.assertTrue(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyActived('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyActived('THREE:3')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertTrue(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyWaiting('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyWaiting('THREE:3')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertTrue(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyPaused('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyPaused('THREE:3')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertTrue(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyDeleted('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyDeleted('THREE:3')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertTrue(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyDestroyed('TWO:2')
+        self.assertFalse(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
+
+        notification.reset_mock()
+
+        self.dep.notifyDestroyed('THREE:3')
+        self.assertTrue(notification.none.called)
+        self.assertFalse(notification.created.called)
+        self.assertFalse(notification.actived.called)
+        self.assertFalse(notification.waiting.called)
+        self.assertFalse(notification.paused.called)
+        self.assertFalse(notification.deleted.called)
 
 
 ###############################################################################

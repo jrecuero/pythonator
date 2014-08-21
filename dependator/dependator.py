@@ -32,6 +32,7 @@ from priority import Priority
 from instance import Instance
 from depForInstance import DepForInstance
 #from depForAttribute import DepForAttribute
+import loggerator
 
 
 ###############################################################################
@@ -110,6 +111,9 @@ class Dependator(object):
         >>> dep.attrID
         0
 
+        >>> dep.logger # doctest: +ELLIPSIS
+        <loggerator.Loggerator object at 0x...>
+
         """
         self.instances = {}
         """
@@ -153,6 +157,14 @@ class Dependator(object):
         Notificator instance for handling all notification callbacks
         """
 
+        self.logger = loggerator.getLoggerator('dependator',
+                                               color=(loggerator.FG_CYAN))
+        """
+            :type: loggerator.Loggerator
+
+            Variable for local logger. Disable debug logs by default.
+        """
+
     # =========================================================================
     def triggerHandler(self, theInstName, theState,  *args, **kwargs):
         """
@@ -162,6 +174,10 @@ class Dependator(object):
         for inDeps in allInDeps:
             for inDepID in inDeps:
                 dep = self.instDependencies[inDepID]
+                instToCheckStateList = dep.deps
+                for instToCheckState in instToCheckStateList:
+                    if self.getInstanceState(instToCheckState) != theState:
+                        return
                 dep.callbacks[theState](dep.instName, dep.deps, *args, **kwargs)
 
     # =========================================================================
@@ -185,6 +201,8 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to register
         """
+        if __debug__:
+            self.logger.debug('registerInstance %s' % (theInstName, ))
         if theInstName in self.instances:
             return None
         instance = Instance(theInstName)
@@ -215,6 +233,8 @@ class Dependator(object):
         :type theInstName: str
         :param theInstName: Instance name to deregister
         """
+        if __debug__:
+            self.logger.debug('deregisterInstance %s' % (theInstName, ))
         if theInstName in self.instances:
             instance = self.instances[theInstName]
             del self.instances[theInstName]
@@ -285,6 +305,9 @@ class Dependator(object):
         :rtype: bool
         :return: True if state was changed else False
         """
+        if __debug__:
+            self.logger.debug('setState instance: %s, state: %s, args: %s, kwargs: %s' %
+                              (theInstName, State.NAMES[theState], args, kwargs))
         if theInstName in self.instances:
             instance = self.instances[theInstName]
             instance.state = theState
@@ -704,6 +727,9 @@ class Dependator(object):
         :rtype: int
         :return: ID for the new dependency entry created
         """
+        if __debug__:
+            self.logger.debug('setDependency instance: %s, dependencies: %s, callbacks: %s' %
+                              (theInstName, theDeps, theCallbacks))
         if self._validateAllInstances(theInstName, theDeps) and\
            not self._lookForInstAndDeps(theInstName, theDeps):
             self.instID = self.instID + 1
@@ -735,7 +761,8 @@ class Dependator(object):
         :type theId: int
         :param theId: ID that identified the dependency
         """
-        pass
+        if __debug__:
+            self.logger.debug('clearDependency ID: %s' % (theId, ))
 
     # =========================================================================
     def registerAttributeUpdate(self, theInstName, theAttrList):
@@ -747,13 +774,19 @@ class Dependator(object):
         :type theAttrList: tuple
         :param theAttrList: List of attributes to register for notification
         """
-        pass
+        if __debug__:
+            self.logger.debug('registerAttributeUpdate instance: %s, attrList: %s' %
+                              (theInstName, theAttrList, ))
 
     # =========================================================================
-    def deregisterAttributeUpdate(self):
+    def deregisterAttributeUpdate(self, theId):
         """
+
+        :type theId: int
+        :param theId: ID that identified the attribute update
         """
-        pass
+        if __debug__:
+            self.logger.debug('deregisterAttributeUpdate id: %s' % (theId, ))
 
     # =========================================================================
     def getRegisterAttributeUpdate(self):

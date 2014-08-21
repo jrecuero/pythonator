@@ -363,7 +363,8 @@ class Notificator(object):
         :raise plist.DefaultPriorityException:
             Default priority does not belong to the list of priorities provided.
         """
-        self.logger = loggerator.getLoggerator('notificator')
+        self.logger = loggerator.getLoggerator('notificator',
+                                               color=(loggerator.FG_YELLOW))
         """
             :type: loggerator.Loggerator
 
@@ -744,8 +745,7 @@ class Notificator(object):
                 argsToUse   = args if args  else triggerInfo[ARGS]
                 kwargsToUse = kwargs if kwargs else triggerInfo[KWARGS]
                 if __debug__:
-                    self.logger.debug('triggerFunction %s, argsToUse %s,\
-                                      kwargsToUse %s' %
+                    self.logger.debug('triggerFunction %s, argsToUse %s, kwargsToUse %s' %
                                       (triggerInfo[TRIGGER], argsToUse, kwargsToUse))
                 triggerInfo[PLIST][BEFORE].callForAll(*argsToUse, **kwargsToUse)
                 retvalue = triggerFunction(*argsToUse, **kwargsToUse)

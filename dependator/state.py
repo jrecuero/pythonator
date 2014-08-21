@@ -83,6 +83,9 @@ class State(object):
     >>> State.ALL
     (0, 1, 2, 3, 4, 5)
 
+    >>> State.NAMES
+    ('NONE', 'CREATED', 'ACTIVED', 'WAITING', 'PAUSED', 'DELETED')
+
     """
 
     NONE    = 0
@@ -128,6 +131,13 @@ class State(object):
     """
 
     ALL = (NONE, CREATED, ACTIVED, WAITING, PAUSED, DELETED)
+    """
+    :type: tuple
+
+    List with all possible states
+    """
+
+    NAMES = ('NONE', 'CREATED', 'ACTIVED', 'WAITING', 'PAUSED', 'DELETED')
     """
     :type: tuple
 

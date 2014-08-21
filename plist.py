@@ -262,7 +262,7 @@ class PValuesList(object):
             raise DefaultPriorityException('default: %s not in %s' %
                                            (defaultPriority, priorities))
 
-        self.logger          = loggerator.getLoggerator('pobject')
+        self.logger          = loggerator.getLoggerator('pvaluelist')
         self.priorities      = priorities
         self.defaultPriority = defaultPriority
         self.name            = name
