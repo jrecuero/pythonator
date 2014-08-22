@@ -70,6 +70,18 @@ class Instance(object):
     def __init__(self, theName):
         """ Instance initialization
 
+        Every instance contains the instance name, the state for the instance
+        and four lists:
+
+        * List with IDs for all dependencies this instance have
+
+        * List with IDs for all dependencies this instance is included
+
+        * List with IDs for all attribute dependencies this instance have
+
+        * List with IDs for all attribute dependencies this instance is
+        included
+
         >>> inst = Instance('INSTANCE')
 
         >>> inst.name
@@ -127,7 +139,7 @@ class Instance(object):
         2
 
         :type theName: str
-        :param theName: Name of the instace
+        :param theName: Name of the instance
         """
         self.name        = theName
         self.state       = State.NONE
@@ -140,16 +152,103 @@ class Instance(object):
             self.triggers[st] = None
 
     # =========================================================================
-    def addInstanceDependency(self, theInstID):
+    def addInstanceDependency(self, theInstId):
+        """ Add dependency id for an instance
+
+        Add the id for dependencies for the given instance. It can search in
+        that all dependencies for the given instance
+
+        >>> inst = Instance('INSTANCE')
+
+        >>> inst.addInstanceDependency(1)
+        1
+
+        >>> inst.instDeps.getAllLists()
+        [[], [1], []]
+
+        :type theInstId: int
+        :param theInstId: Id for the dependecy
+
+        :rtype: int
+        :return: instance id added
         """
-        """
-        self.instDeps.addAtFront(theInstID)
+        return self.instDeps.addAtFront(theInstId)
 
     # =========================================================================
-    def addInstanceInDependency(self, theInstID):
+    def removeInstanceDependency(self, theInstId):
+        """ Remove dependency id for an instance
+
+        Remove the id for dependencies for the given instance.
+
+        >>> inst = Instance('INSTANCE')
+        >>> inst.addInstanceDependency(1)
+        1
+        >>> inst.instDeps.getAllLists()
+        [[], [1], []]
+
+        >>> inst.removeInstanceDependency(1)
+        1
+
+        >>> inst.instDeps.getAllLists()
+        [[], [], []]
+
+        :type theInstId: int
+        :param theInstId: Id for the dependecy
+
+        :rtype: int
+        :return: instance id removed else None if not found
         """
+        return self.instDeps.remove(theInstId)
+
+    # =========================================================================
+    def addInstanceInDependency(self, theInstId):
+        """ Add in dependecy id for an instance
+
+        Instance is in the given dependency as a dependency, so the id is
+        stored in order to check when instance state change what other
+        instances should be notified
+
+        >>> inst = Instance('INSTANCE')
+
+        >>> inst.addInstanceInDependency(1)
+        1
+
+        >>> inst.instInDeps.getAllLists()
+        [[], [1], []]
+
+        :type theInstId: int
+        :param theInstId: Id for the dependecy
+
+        :rtype: int
+        :return: instance id added
         """
-        self.instInDeps.addAtFront(theInstID)
+        return self.instInDeps.addAtFront(theInstId)
+
+    # =========================================================================
+    def removeInstanceInDependency(self, theInstId):
+        """ Remove dependency id for an instance
+
+        Remove the id for dependencies for the given instance.
+
+        >>> inst = Instance('INSTANCE')
+        >>> inst.addInstanceInDependency(1)
+        1
+        >>> inst.instInDeps.getAllLists()
+        [[], [1], []]
+
+        >>> inst.removeInstanceInDependency(1)
+        1
+
+        >>> inst.instInDeps.getAllLists()
+        [[], [], []]
+
+        :type theInstId: int
+        :param theInstId: Id for the dependecy
+
+        :rtype: int
+        :return: instance id removed else None if not found
+        """
+        return self.instInDeps.remove(theInstId)
 
 
 ###############################################################################

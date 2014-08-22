@@ -167,7 +167,17 @@ class Dependator(object):
 
     # =========================================================================
     def triggerHandler(self, theInstName, theState,  *args, **kwargs):
-        """
+        """ Handle state notification changes
+
+        When any instance change state, this trigger is called, it checks if
+        the instance is in any dependency and check if all dependencies have
+        been accomplished in order to trigger callbacks
+
+        :type theInstName: str
+        :param theInstName: Instance name to change state
+
+        :type theState: State
+        :param theState: State the instance has changed
         """
         instance  = self.instances[theInstName]
         allInDeps = instance.instInDeps.getAllLists()
@@ -200,6 +210,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to register
+
+        :rtype: Instance
+        :return: New instance registered in dependator
         """
         if __debug__:
             self.logger.debug('registerInstance %s' % (theInstName, ))
@@ -232,6 +245,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to deregister
+
+        :rtype: Instance
+        :return: Instance being deleted if found else None
         """
         if __debug__:
             self.logger.debug('deregisterInstance %s' % (theInstName, ))
@@ -336,6 +352,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to change state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         return self.setState(theInstName, State.CREATED, True)
 
@@ -355,6 +374,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to change state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         return self.setState(theInstName, State.ACTIVED, True, *args, **kwargs)
 
@@ -374,6 +396,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to change state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         return self.setState(theInstName, State.WAITING, True)
 
@@ -393,6 +418,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to change state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         return self.setState(theInstName, State.PAUSED, True)
 
@@ -412,6 +440,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to change state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         return self.setState(theInstName, State.DELETED, True)
 
@@ -431,6 +462,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to change state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         return self.setState(theInstName, State.NONE, True)
 
@@ -450,6 +484,9 @@ class Dependator(object):
 
         :type theInstName: str
         :param theInstName: Instance name to get state
+
+        :rtype: bool
+        :return: True if state was changed else False
         """
         if theInstName in self.instances:
             return self.instances[theInstName].state
@@ -749,20 +786,77 @@ class Dependator(object):
     def getDependency(self, theId):
         """ Get dependency for the given instance
 
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.setDependency('ONE', ('TWO', ), {State.ACTIVED: lambda x, y, z=None: (x, y, z)})
+        1
+
+        >>> instDep = dep.getDependency(1)
+        >>> instDep # doctest: +ELLIPSIS
+        <depForInstance.DepForInstance object at 0x...>
+
+        >>> instDep.instName
+        'ONE'
+
+        >>> instDep.deps
+        ['TWO']
+
         :type theId: int
         :param theId: ID that identified the dependency
+
+        :rtype: DepForInstance
+        :return: Dependency if the id is found, else None if not found
         """
-        pass
+        if theId in self.instDependencies:
+            return self.instDependencies[theId]
+        return None
 
     # =========================================================================
     def clearDependency(self, theId):
-        """ Clear dependencyu for the given instance
+        """ Clear dependency for the given instance
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.setDependency('ONE', ('TWO', ), {State.ACTIVED: lambda x, y, z=None: (x, y, z)})
+        1
+        >>> dep.instDependencies[1].instName
+        'ONE'
+
+        >>> instDep = dep.clearDependency(1)
+        >>> instDep.instName
+        'ONE'
+
+        >>> instDep.deps
+        ['TWO']
+
+        >>> 1 in dep.instDependencies
+        False
 
         :type theId: int
         :param theId: ID that identified the dependency
+
+        :rtype: DepForInstance
+        :return: Dependency if the id is found, else None if not found
         """
         if __debug__:
             self.logger.debug('clearDependency ID: %s' % (theId, ))
+
+        if theId in self.instDependencies:
+            removedInstance = self.instDependencies[theId]
+            instName = removedInstance.instName
+            deps     = removedInstance.deps
+            self.instances[instName].removeInstanceDependency(theId)
+            for instInDep in deps:
+                self.instances[instInDep].removeInstanceInDependency(theId)
+            del self.instDependencies[theId]
+            return removedInstance
+        return None
 
     # =========================================================================
     def registerAttributeUpdate(self, theInstName, theAttrList):
