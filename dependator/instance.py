@@ -250,6 +250,82 @@ class Instance(object):
         """
         return self.instInDeps.remove(theInstId)
 
+    # =========================================================================
+    def addAttributeDependency(self, theAttrId):
+        """ Add dependency attribute id for an instance
+
+        >>> inst = Instance('INSTANCE')
+
+        >>> inst.addAttributeDependency(1)
+        1
+
+        >>> inst.attrDeps.getAllLists()
+        [[], [1], []]
+
+        :type theAttrId: int
+        :param theAttrId: Id for the attribute
+        """
+        return self.attrDeps.addAtFront(theAttrId)
+
+    # =========================================================================
+    def removeAttributeDependency(self, theAttrId):
+        """ Remove dependency attribute id for an instance
+
+        >>> inst = Instance('INSTANCE')
+        >>> inst.addAttributeDependency(1)
+        1
+        >>> inst.attrDeps.getAllLists()
+        [[], [1], []]
+
+        >>> inst.removeAttributeDependency(1)
+        1
+
+        >>> inst.attrDeps.getAllLists()
+        [[], [], []]
+
+        :type theAttrId: int
+        :param theAttrId: Id for the attribute
+        """
+        return self.attrDeps.remove(theAttrId)
+
+    # =========================================================================
+    def addAttributeInDependency(self, theAttrId):
+        """ Add dependency attribute id in the attribute instance
+
+        >>> inst = Instance('INSTANCE')
+
+        >>> inst.addAttributeInDependency(1)
+        1
+
+        >>> inst.attrInDeps.getAllLists()
+        [[], [1], []]
+
+        :type theAttrId: int
+        :param theAttrId: Id for the attribute
+        """
+        return self.attrInDeps.addAtFront(theAttrId)
+
+    # =========================================================================
+    def removeAttributeInDependency(self, theAttrId):
+        """ Remove dependency attribute id for in the attribute instance
+
+        >>> inst = Instance('INSTANCE')
+        >>> inst.addAttributeInDependency(1)
+        1
+        >>> inst.attrInDeps.getAllLists()
+        [[], [1], []]
+
+        >>> inst.removeAttributeInDependency(1)
+        1
+
+        >>> inst.attrInDeps.getAllLists()
+        [[], [], []]
+
+        :type theAttrId: int
+        :param theAttrId: Id for the attribute
+        """
+        return self.attrInDeps.remove(theAttrId)
+
 
 ###############################################################################
 ##                  _

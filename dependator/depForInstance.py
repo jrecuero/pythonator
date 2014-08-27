@@ -152,7 +152,7 @@ class DepForInstance(object):
 
         >>> di = DepForInstance(1, 'ME', ('YOU', 'HIM'), {'actived': True})
         >>> print di
-        1 : 'ME' : ['HIM', 'YOU'] : {'actived': True} : 2
+        1 : ME : ['HIM', 'YOU'] : {'actived': True} : 2
 
         :rtype: str
         :return: String that represents the instance

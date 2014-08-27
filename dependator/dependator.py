@@ -31,7 +31,7 @@ from state import State
 from priority import Priority
 from instance import Instance
 from depForInstance import DepForInstance
-#from depForAttribute import DepForAttribute
+from depForAttribute import DepForAttribute
 import loggerator
 
 
@@ -650,7 +650,7 @@ class Dependator(object):
         return State.DELETED == self.getInstanceState(theInstName)
 
     # =========================================================================
-    def _validateAllInstances(self, theInstName, theDeps):
+    def _validateAllInstances(self, theInstName, theDeps=None):
         """ Validate all instances have been registered
 
         >>> dep = Dependator()
@@ -682,7 +682,7 @@ class Dependator(object):
         :rtype: bool
         :return: True if all instance are registered else False
         """
-        lista = list(theDeps)
+        lista = list(theDeps) if theDeps else []
         lista.append(theInstName)
         result = map(lambda x: x in self.instances, lista)
         return all(result)
@@ -767,6 +767,7 @@ class Dependator(object):
         if __debug__:
             self.logger.debug('setDependency instance: %s, dependencies: %s, callbacks: %s' %
                               (theInstName, theDeps, theCallbacks))
+
         if self._validateAllInstances(theInstName, theDeps) and\
            not self._lookForInstAndDeps(theInstName, theDeps):
             self.instID = self.instID + 1
@@ -780,38 +781,6 @@ class Dependator(object):
             for instInDep in theDeps:
                 self.instances[instInDep].addInstanceInDependency(self.instID)
             return self.instID
-        return None
-
-    # =========================================================================
-    def getDependency(self, theId):
-        """ Get dependency for the given instance
-
-        >>> dep = Dependator()
-        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
-        <...>
-        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
-        <...>
-        >>> dep.setDependency('ONE', ('TWO', ), {State.ACTIVED: lambda x, y, z=None: (x, y, z)})
-        1
-
-        >>> instDep = dep.getDependency(1)
-        >>> instDep # doctest: +ELLIPSIS
-        <depForInstance.DepForInstance object at 0x...>
-
-        >>> instDep.instName
-        'ONE'
-
-        >>> instDep.deps
-        ['TWO']
-
-        :type theId: int
-        :param theId: ID that identified the dependency
-
-        :rtype: DepForInstance
-        :return: Dependency if the id is found, else None if not found
-        """
-        if theId in self.instDependencies:
-            return self.instDependencies[theId]
         return None
 
     # =========================================================================
@@ -859,22 +828,110 @@ class Dependator(object):
         return None
 
     # =========================================================================
-    def registerAttributeUpdate(self, theInstName, theAttrList):
+    def getDependency(self, theId):
+        """ Get dependency for the given instance
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.setDependency('ONE', ('TWO', ), {State.ACTIVED: lambda x, y, z=None: (x, y, z)})
+        1
+
+        >>> instDep = dep.getDependency(1)
+        >>> instDep # doctest: +ELLIPSIS
+        <depForInstance.DepForInstance object at 0x...>
+
+        >>> instDep.instName
+        'ONE'
+
+        >>> instDep.deps
+        ['TWO']
+
+        :type theId: int
+        :param theId: ID that identified the dependency
+
+        :rtype: DepForInstance
+        :return: Dependency if the id is found, else None if not found
+        """
+        if theId in self.instDependencies:
+            return self.instDependencies[theId]
+        return None
+
+    # =========================================================================
+    def registerAttributeUpdate(self,
+                                theInstName,
+                                theInstWithAttrs,
+                                theAttrList,
+                                theCallback,
+                                thePriority=Priority.DEFAULT):
         """ Register callback for the given attributes for the given instance
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+
+        >>> dep.registerAttributeUpdate('ONE', 'TWO', ('a', ), lambda x, y, z=None: (x, y, z))
+        1
+
+        >>> dep.attrDependencies[1].instName
+        'ONE'
+
+        >>> dep.attrDependencies[1].instDep
+        'TWO'
 
         :type theInstName: str
         :param theInstName: Instance name containing attributes to register
 
+        :type theInstWithAttrs: str
+        :param theInstWithAttrs: Instance that contains dependant attributes
+
         :type theAttrList: tuple
         :param theAttrList: List of attributes to register for notification
+
+        :type theCallback: func
+        :param theCallback: Notification to be called when attribute updaed
+
+        :type thePriority: Priority
+        :param thePriority: Priority for callback notifications
         """
         if __debug__:
             self.logger.debug('registerAttributeUpdate instance: %s, attrList: %s' %
                               (theInstName, theAttrList, ))
 
+        if self._validateAllInstances(theInstName, [theInstWithAttrs, ]):
+            self.attrID = self.attrID + 1
+            attrDep = DepForAttribute(self.attrID,
+                                      theInstName,
+                                      theInstWithAttrs,
+                                      theAttrList,
+                                      theCallback,
+                                      thePriority)
+            self.attrDependencies[self.attrID] = attrDep
+            self.instances[theInstName].addAttributeDependency(self.attrID)
+            self.instances[theInstWithAttrs].addAttributeInDependency(self.attrID)
+            return self.attrID
+
     # =========================================================================
     def deregisterAttributeUpdate(self, theId):
-        """
+        """ Deregister callback for the given attribute ID
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerAttributeUpdate('ONE', 'TWO', ('a', ), lambda x, y, z=None: (x, y, z))
+        1
+        >>> dep.attrDependencies[1].instName
+        'ONE'
+
+        >>> instDep = dep.deregisterAttributeUpdate(1)
+        >>> instDep.instName
+        'ONE'
 
         :type theId: int
         :param theId: ID that identified the attribute update
@@ -882,11 +939,47 @@ class Dependator(object):
         if __debug__:
             self.logger.debug('deregisterAttributeUpdate id: %s' % (theId, ))
 
+        if theId in self.attrDependencies:
+            removedInstance = self.attrDependencies[theId]
+            instName = removedInstance.instName
+            instDep  = removedInstance.instDep
+            self.instances[instName].removeAttributeDependency(theId)
+            self.instances[instDep].removeAttributeDependency(theId)
+            del self.attrDependencies[theId]
+            return removedInstance
+        return None
+
     # =========================================================================
-    def getRegisterAttributeUpdate(self):
+    def getAttributeUpdate(self, theId):
+        """ Get attribute dependency for the given instance
+
+        >>> dep = Dependator()
+        >>> dep.registerInstance('ONE') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
+        <...>
+        >>> dep.registerAttributeUpdate('ONE', 'TWO', ('a', ), lambda x, y, z=None: (x, y, z))
+        1
+
+        >>> instDep = dep.getAttributeUpdate(1)
+        >>> instDep # doctest: +ELLIPSIS
+        <depForAttribute.DepForAttribute object at 0x...>
+
+        >>> instDep.instName
+        'ONE'
+
+        >>> instDep.instDep
+        'TWO'
+
+        :type theId: int
+        :param theId: ID that identified the attribute update
+
+        :rtype: DepForAttribute
+        :return: Attribute Dependency if the id is found else None if not found
         """
-        """
-        pass
+        if theId in self.attrDependencies:
+            return self.attrDependencies[theId]
+        return None
 
 
 ###############################################################################
