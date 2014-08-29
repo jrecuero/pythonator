@@ -114,29 +114,11 @@ class Instance(object):
         >>> inst.instInDeps.priorityValues.getDefault()
         2
 
-        >>> inst.attrDeps # doctest: +ELLIPSIS
-        <plist.PList object at 0x...>
+        >>> inst.attrDeps
+        {}
 
-        >>> inst.attrDeps.getAllLists()
-        [[], [], []]
-
-        >>> inst.attrDeps.priorityValues.getList()
-        (1, 2, 3)
-
-        >>> inst.attrDeps.priorityValues.getDefault()
-        2
-
-        >>> inst.attrInDeps # doctest: +ELLIPSIS
-        <plist.PList object at 0x...>
-
-        >>> inst.attrInDeps.getAllLists()
-        [[], [], []]
-
-        >>> inst.attrInDeps.priorityValues.getList()
-        (1, 2, 3)
-
-        >>> inst.attrInDeps.priorityValues.getDefault()
-        2
+        >>> inst.attrInDeps
+        {}
 
         :type theName: str
         :param theName: Name of the instance
@@ -145,8 +127,8 @@ class Instance(object):
         self.state       = State.NONE
         self.instDeps    = plist.PList(Priority.PRIOS, Priority.DEFAULT)
         self.instInDeps  = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-        self.attrDeps    = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-        self.attrInDeps  = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrDeps    = {}
+        self.attrInDeps  = {}
         self.triggers    = {}
         for st in State.ALL:
             self.triggers[st] = None
@@ -251,80 +233,103 @@ class Instance(object):
         return self.instInDeps.remove(theInstId)
 
     # =========================================================================
-    def addAttributeDependency(self, theAttrId):
+    def addAttributeDependency(self, theDepAttr, ):
         """ Add dependency attribute id for an instance
 
         >>> inst = Instance('INSTANCE')
+        >>> from depForAttribute import DepForAttribute
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
 
-        >>> inst.addAttributeDependency(1)
-        1
+        >>> inst.addAttributeDependency(depForAttr)
+        True
 
-        >>> inst.attrDeps.getAllLists()
+        >>> ('OTHER', 'a') in inst.attrDeps
+        True
+
+        >>> inst.attrDeps[('OTHER', 'a')].getAllLists()
         [[], [1], []]
 
-        :type theAttrId: int
-        :param theAttrId: Id for the attribute
+        :type theDepAttr: DepForAttribute
+        :param theDepAttr: DepForAttributeInstance
         """
-        return self.attrDeps.addAtFront(theAttrId)
+        for attr in theDepAttr.attrs:
+            if (theDepAttr.instDep, attr) not in self.attrDeps:
+                self.attrDeps[(theDepAttr.instDep, attr)] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+            self.attrDeps[(theDepAttr.instDep, attr)].addAtFront(theDepAttr.id)
+        return True
 
     # =========================================================================
-    def removeAttributeDependency(self, theAttrId):
+    def removeAttributeDependency(self, theDepAttr):
         """ Remove dependency attribute id for an instance
 
         >>> inst = Instance('INSTANCE')
-        >>> inst.addAttributeDependency(1)
-        1
-        >>> inst.attrDeps.getAllLists()
-        [[], [1], []]
+        >>> from depForAttribute import DepForAttribute
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
+        >>> inst.addAttributeDependency(depForAttr)
+        True
 
-        >>> inst.removeAttributeDependency(1)
-        1
+        >>> inst.removeAttributeDependency(depForAttr)
+        True
 
-        >>> inst.attrDeps.getAllLists()
-        [[], [], []]
-
-        :type theAttrId: int
-        :param theAttrId: Id for the attribute
+        :type theDepAttr: DepForAttribute
+        :param theDepAttr: DepForAttributeInstance
         """
-        return self.attrDeps.remove(theAttrId)
+        for attr in theDepAttr.attrs:
+            if (theDepAttr.instDep, attr) in self.attrDeps:
+                self.attrDeps[(theDepAttr.instDep, attr)].remove(theDepAttr.id)
+            else:
+                return False
+        return True
 
     # =========================================================================
-    def addAttributeInDependency(self, theAttrId):
+    def addAttributeInDependency(self, theDepAttr):
         """ Add dependency attribute id in the attribute instance
 
         >>> inst = Instance('INSTANCE')
+        >>> from depForAttribute import DepForAttribute
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
 
-        >>> inst.addAttributeInDependency(1)
-        1
+        >>> inst.addAttributeInDependency(depForAttr)
+        True
 
-        >>> inst.attrInDeps.getAllLists()
+        >>> 'a' in inst.attrInDeps
+        True
+
+        >>> inst.attrInDeps['a'].getAllLists()
         [[], [1], []]
 
-        :type theAttrId: int
-        :param theAttrId: Id for the attribute
+        :type theDepAttr: DepForAttribute
+        :param theDepAttr: DepForAttributeInstance
         """
-        return self.attrInDeps.addAtFront(theAttrId)
+        for attr in theDepAttr.attrs:
+            if not attr in self.attrInDeps:
+                self.attrInDeps[attr] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+            self.attrInDeps[attr].addAtFront(theDepAttr.id)
+        return True
 
     # =========================================================================
-    def removeAttributeInDependency(self, theAttrId):
+    def removeAttributeInDependency(self, theDepAttr):
         """ Remove dependency attribute id for in the attribute instance
 
+
         >>> inst = Instance('INSTANCE')
-        >>> inst.addAttributeInDependency(1)
-        1
-        >>> inst.attrInDeps.getAllLists()
-        [[], [1], []]
+        >>> from depForAttribute import DepForAttribute
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
+        >>> inst.addAttributeInDependency(depForAttr)
+        True
 
-        >>> inst.removeAttributeInDependency(1)
-        1
+        >>> inst.removeAttributeInDependency(depForAttr)
+        True
 
-        >>> inst.attrInDeps.getAllLists()
-        [[], [], []]
-
-        :type theAttrId: int
-        :param theAttrId: Id for the attribute
+        :type theDepAttr: DepForAttribute
+        :param theDepAttr: DepForAttributeInstance
         """
-        return self.attrInDeps.remove(theAttrId)
+        for attr in theDepAttr.attrs:
+            if attr in self.attrInDeps:
+                self.attrInDeps[attr].remove(theDepAttr.id)
+            else:
+                return False
+        return True
 
 
 ###############################################################################

@@ -231,6 +231,7 @@ class Dependator(object):
     # =========================================================================
     def deregisterInstance(self, theInstName):
         """ Deregister instance from the dependator
+
         >>> dep = Dependator()
         >>> dep.registerInstance('THE_INSTANCE') # doctest: +ELLIPSIS
         <instance.Instance object at 0x...>
@@ -307,7 +308,6 @@ class Dependator(object):
         True
         >>> instance.state
         5
-
 
         :type theInstName: str
         :param theInstName: Instance name to change state
@@ -911,8 +911,8 @@ class Dependator(object):
                                       theCallback,
                                       thePriority)
             self.attrDependencies[self.attrID] = attrDep
-            self.instances[theInstName].addAttributeDependency(self.attrID)
-            self.instances[theInstWithAttrs].addAttributeInDependency(self.attrID)
+            self.instances[theInstName].addAttributeDependency(attrDep)
+            self.instances[theInstWithAttrs].addAttributeInDependency(attrDep)
             return self.attrID
 
     # =========================================================================
@@ -943,8 +943,8 @@ class Dependator(object):
             removedInstance = self.attrDependencies[theId]
             instName = removedInstance.instName
             instDep  = removedInstance.instDep
-            self.instances[instName].removeAttributeDependency(theId)
-            self.instances[instDep].removeAttributeDependency(theId)
+            self.instances[instName].removeAttributeDependency(removedInstance)
+            self.instances[instDep].removeAttributeDependency(removedInstance)
             del self.attrDependencies[theId]
             return removedInstance
         return None
