@@ -913,6 +913,8 @@ class Dependator(object):
             self.attrDependencies[self.attrID] = attrDep
             self.instances[theInstName].addAttributeDependency(attrDep)
             self.instances[theInstWithAttrs].addAttributeInDependency(attrDep)
+            result = self.notificator.registerTrigger(lambda x: x, self)
+            self.instances[theInstWithAttrs].attrTriggers[theAttr] = result[notificator.ID]
             return self.attrID
 
     # =========================================================================
@@ -944,7 +946,9 @@ class Dependator(object):
             instName = removedInstance.instName
             instDep  = removedInstance.instDep
             self.instances[instName].removeAttributeDependency(removedInstance)
-            self.instances[instDep].removeAttributeDependency(removedInstance)
+            notificationId = self.instances[instDep].removeAttributeInDependency(removedInstance)
+            if notificationId is not None:
+                self.notificator.deregisterTrigger(notificationId)
             del self.attrDependencies[theId]
             return removedInstance
         return None
@@ -980,6 +984,22 @@ class Dependator(object):
         if theId in self.attrDependencies:
             return self.attrDependencies[theId]
         return None
+
+    # =========================================================================
+    def updateAttribute(self, theInst, theAttr):
+        """ Call notification for the given instance-attribute pair
+
+        :type theInst: str
+        :param theInst: Instance name containing attribute
+
+        :type theAttr: str
+        :param theAttr: Attribute name to be updated
+        """
+        if theInst in self.instances and\
+           theAttr in self.instances[theInst].attrTriggers:
+            self.notificator.runTrigger(self.instances[theInst].attrTriggers)
+            return True
+        return False
 
 
 ###############################################################################

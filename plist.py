@@ -1077,6 +1077,28 @@ class PList(object):
         priority = self.priorityValues.getDefault(priority)
         return len(self.container[priority])
 
+    # =========================================================================
+    def isEmpty(self):
+        """ Check if the list is empty
+
+        >>> pl = PList((1, 2, 3), 2, "custom list")
+
+        >>> pl.isEmpty()
+        True
+
+        >>> pl.container = {1: ['one', 'two'], 2: ['three', 'one', 'four'], 3: ['five', 'two', 'one']}
+
+        >>> pl.isEmpty()
+        False
+
+        :rtype: bool
+        :return: True is the lsit is empty else False
+        """
+        for priority in self.priorityValues.getList():
+            if self.lenInList(priority):
+                return False
+        return True
+
 
 #
 #############################################################################

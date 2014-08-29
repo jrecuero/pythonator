@@ -343,15 +343,21 @@ class Instance(object):
         >>> 'a' in inst.attrInDeps
         True
 
+        >>> 'a' in inst.attrTriggers
+        True
+
         >>> inst.attrInDeps['a'].getAllLists()
         [[], [1], []]
 
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
         """
-        if not theDepAttr.attr in self.attrInDeps:
-            self.attrInDeps[theDepAttr.attr] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-        self.attrInDeps[theDepAttr.attr].addAtFront(theDepAttr.id)
+        attr = theDepAttr.attr
+        if not attr in self.attrInDeps:
+            self.attrInDeps[attr] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        if not attr in self.attrTriggers:
+            self.attrTriggers[attr] = None
+        self.attrInDeps[attr].addAtFront(theDepAttr.id)
         return True
 
     # =========================================================================
@@ -364,18 +370,25 @@ class Instance(object):
         >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', 'a', True)
         >>> inst.addAttributeInDependency(depForAttr)
         True
+        >>> inst.attrTriggers['a'] = 1
 
         >>> inst.removeAttributeInDependency(depForAttr)
-        True
+        1
 
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
         """
-        if theDepAttr.attr in self.attrInDeps:
-            self.attrInDeps[theDepAttr.attr].remove(theDepAttr.id)
+        id = None
+        attr = theDepAttr.attr
+        if attr in self.attrInDeps:
+            self.attrInDeps[attr].remove(theDepAttr.id)
+            if self.attrInDeps[attr].isEmpty():
+                del self.attrInDeps[attr]
+                id = self.attrTriggers[attr]
+                del self.attrTriggers[attr]
         else:
-            return False
-        return True
+            return id
+        return id
 
 
 ###############################################################################
