@@ -124,14 +124,64 @@ class Instance(object):
         :param theName: Name of the instance
         """
         self.name        = theName
+        """
+        :type: str
+
+        Instance name
+        """
+
         self.state       = State.NONE
+        """
+        :type: State
+
+        Instance state
+        """
+
         self.instDeps    = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        """
+        :type: plist.PList
+
+        Priority list with all instance dependencies
+        """
+
         self.instInDeps  = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        """
+        :type: plist.Plist
+
+        Priority list with all dependencies where instance is a dependency
+        """
+
         self.attrDeps    = {}
+        """
+        :type: dict
+
+        Dictionary with all instance-attribute pairs instance has a dependency
+        """
+
         self.attrInDeps  = {}
-        self.triggers    = {}
+        """
+        :type: dict
+
+        Dictionary with all instance attributes are in a dependency
+        """
+
+        self.stateTriggers = {}
+        """
+        :type: list
+
+        List with all state triggers to be called when instance change state
+        """
+
+        self.attrTriggers = {}
+        """
+        :type: dict
+
+        Dictionary with all attribute triggers to be called when attribute is
+        updated
+        """
+
         for st in State.ALL:
-            self.triggers[st] = None
+            self.stateTriggers[st] = None
 
     # =========================================================================
     def addInstanceDependency(self, theInstId):
@@ -238,7 +288,7 @@ class Instance(object):
 
         >>> inst = Instance('INSTANCE')
         >>> from depForAttribute import DepForAttribute
-        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', 'a', True)
 
         >>> inst.addAttributeDependency(depForAttr)
         True
@@ -252,10 +302,9 @@ class Instance(object):
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
         """
-        for attr in theDepAttr.attrs:
-            if (theDepAttr.instDep, attr) not in self.attrDeps:
-                self.attrDeps[(theDepAttr.instDep, attr)] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-            self.attrDeps[(theDepAttr.instDep, attr)].addAtFront(theDepAttr.id)
+        if (theDepAttr.instDep, theDepAttr.attr) not in self.attrDeps:
+            self.attrDeps[(theDepAttr.instDep, theDepAttr.attr)] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrDeps[(theDepAttr.instDep, theDepAttr.attr)].addAtFront(theDepAttr.id)
         return True
 
     # =========================================================================
@@ -264,7 +313,7 @@ class Instance(object):
 
         >>> inst = Instance('INSTANCE')
         >>> from depForAttribute import DepForAttribute
-        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', 'a', True)
         >>> inst.addAttributeDependency(depForAttr)
         True
 
@@ -274,11 +323,10 @@ class Instance(object):
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
         """
-        for attr in theDepAttr.attrs:
-            if (theDepAttr.instDep, attr) in self.attrDeps:
-                self.attrDeps[(theDepAttr.instDep, attr)].remove(theDepAttr.id)
-            else:
-                return False
+        if (theDepAttr.instDep, theDepAttr.attr) in self.attrDeps:
+            self.attrDeps[(theDepAttr.instDep, theDepAttr.attr)].remove(theDepAttr.id)
+        else:
+            return False
         return True
 
     # =========================================================================
@@ -287,7 +335,7 @@ class Instance(object):
 
         >>> inst = Instance('INSTANCE')
         >>> from depForAttribute import DepForAttribute
-        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', 'a', True)
 
         >>> inst.addAttributeInDependency(depForAttr)
         True
@@ -301,10 +349,9 @@ class Instance(object):
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
         """
-        for attr in theDepAttr.attrs:
-            if not attr in self.attrInDeps:
-                self.attrInDeps[attr] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
-            self.attrInDeps[attr].addAtFront(theDepAttr.id)
+        if not theDepAttr.attr in self.attrInDeps:
+            self.attrInDeps[theDepAttr.attr] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
+        self.attrInDeps[theDepAttr.attr].addAtFront(theDepAttr.id)
         return True
 
     # =========================================================================
@@ -314,7 +361,7 @@ class Instance(object):
 
         >>> inst = Instance('INSTANCE')
         >>> from depForAttribute import DepForAttribute
-        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', ('a', ), True)
+        >>> depForAttr = DepForAttribute(1, 'INSTANCE', 'OTHER', 'a', True)
         >>> inst.addAttributeInDependency(depForAttr)
         True
 
@@ -324,11 +371,10 @@ class Instance(object):
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
         """
-        for attr in theDepAttr.attrs:
-            if attr in self.attrInDeps:
-                self.attrInDeps[attr].remove(theDepAttr.id)
-            else:
-                return False
+        if theDepAttr.attr in self.attrInDeps:
+            self.attrInDeps[theDepAttr.attr].remove(theDepAttr.id)
+        else:
+            return False
         return True
 
 

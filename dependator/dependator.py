@@ -223,7 +223,7 @@ class Dependator(object):
         # register notificator triggers for state changes
         for st in State.ALL:
             result = self.notificator.registerTrigger(self.triggerHandler, theInstName, st)
-            instance.triggers[st] = result[notificator.ID]
+            instance.stateTriggers[st] = result[notificator.ID]
 
         self.instances[theInstName] = instance
         return instance
@@ -328,7 +328,7 @@ class Dependator(object):
             instance = self.instances[theInstName]
             instance.state = theState
             if theNotify:
-                self.notificator.runTrigger(instance.triggers[theState],
+                self.notificator.runTrigger(instance.stateTriggers[theState],
                                             theInstName,
                                             theState,
                                             *args,
@@ -863,7 +863,7 @@ class Dependator(object):
     def registerAttributeUpdate(self,
                                 theInstName,
                                 theInstWithAttrs,
-                                theAttrList,
+                                theAttr,
                                 theCallback,
                                 thePriority=Priority.DEFAULT):
         """ Register callback for the given attributes for the given instance
@@ -874,7 +874,7 @@ class Dependator(object):
         >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
         <...>
 
-        >>> dep.registerAttributeUpdate('ONE', 'TWO', ('a', ), lambda x, y, z=None: (x, y, z))
+        >>> dep.registerAttributeUpdate('ONE', 'TWO', 'a', lambda x, y, z=None: (x, y, z))
         1
 
         >>> dep.attrDependencies[1].instName
@@ -889,8 +889,8 @@ class Dependator(object):
         :type theInstWithAttrs: str
         :param theInstWithAttrs: Instance that contains dependant attributes
 
-        :type theAttrList: tuple
-        :param theAttrList: List of attributes to register for notification
+        :type theAttr: str
+        :param theAttr: Attribute to register for notification
 
         :type theCallback: func
         :param theCallback: Notification to be called when attribute updaed
@@ -899,15 +899,15 @@ class Dependator(object):
         :param thePriority: Priority for callback notifications
         """
         if __debug__:
-            self.logger.debug('registerAttributeUpdate instance: %s, attrList: %s' %
-                              (theInstName, theAttrList, ))
+            self.logger.debug('registerAttributeUpdate instance: %s, attr: %s' %
+                              (theInstName, theAttr, ))
 
         if self._validateAllInstances(theInstName, [theInstWithAttrs, ]):
             self.attrID = self.attrID + 1
             attrDep = DepForAttribute(self.attrID,
                                       theInstName,
                                       theInstWithAttrs,
-                                      theAttrList,
+                                      theAttr,
                                       theCallback,
                                       thePriority)
             self.attrDependencies[self.attrID] = attrDep
@@ -924,7 +924,7 @@ class Dependator(object):
         <...>
         >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
         <...>
-        >>> dep.registerAttributeUpdate('ONE', 'TWO', ('a', ), lambda x, y, z=None: (x, y, z))
+        >>> dep.registerAttributeUpdate('ONE', 'TWO', 'a', lambda x, y, z=None: (x, y, z))
         1
         >>> dep.attrDependencies[1].instName
         'ONE'
@@ -958,7 +958,7 @@ class Dependator(object):
         <...>
         >>> dep.registerInstance('TWO') # doctest: +ELLIPSIS
         <...>
-        >>> dep.registerAttributeUpdate('ONE', 'TWO', ('a', ), lambda x, y, z=None: (x, y, z))
+        >>> dep.registerAttributeUpdate('ONE', 'TWO', 'a', lambda x, y, z=None: (x, y, z))
         1
 
         >>> instDep = dep.getAttributeUpdate(1)

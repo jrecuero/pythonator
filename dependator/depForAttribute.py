@@ -70,12 +70,12 @@ class DepForAttribute(object):
                  theId,
                  theInstName,
                  theInstDep,
-                 theAttrList,
+                 theAttr,
                  theCallback,
                  thePriority=Priority.DEFAULT):
         """ Initializes a new dependency attribute
 
-        >>> di = DepForAttribute(1, 'ME', 'YOU', ('a', 'b'), True)
+        >>> di = DepForAttribute(1, 'ME', 'YOU', 'a', True)
 
         >>> di.id
         1
@@ -86,8 +86,8 @@ class DepForAttribute(object):
         >>> di.instDep
         'YOU'
 
-        >>> di.attrs
-        ('a', 'b')
+        >>> di.attr
+        'a'
 
         >>> di.callback
         True
@@ -104,8 +104,8 @@ class DepForAttribute(object):
         :type theInstDep: str
         :param theInstDep: Instance name that contain attributes
 
-        :type theAttrList: tuple
-        :param theAttrList: List of attributes to depend
+        :type theAttr: str
+        :param theAttr: Attribute to depend
 
         :type theCallbacks: func
         :param theCallbacks: Notification to be called when attribute updated
@@ -123,21 +123,21 @@ class DepForAttribute(object):
         Dependency ID
         """
 
-        self.instName  = theInstName
+        self.instName = theInstName
         """
         :type: str
 
         Dependency instance name that has dependecies
         """
 
-        self.instDep   = theInstDep
+        self.instDep = theInstDep
         """
         :type: str
 
         Dependency instance name that has dependant attributes
         """
 
-        self.attrs     = theAttrList
+        self.attr = theAttr
         """
         :type: list
 
@@ -151,7 +151,7 @@ class DepForAttribute(object):
         Notification to be called when attributes are updated
         """
 
-        self.priority  = thePriority
+        self.priority = thePriority
         """
         :type: Priority
 
@@ -170,7 +170,7 @@ class DepForAttribute(object):
         :return: String that represents the instance
         """
         return "%d : %s : %s : %s : %s : %s" %\
-            (self.id, self.instName, self.instDep, self.attrs, self.callback, self.priority)
+            (self.id, self.instName, self.instDep, self.attr, self.callback, self.priority)
 
 
 ###############################################################################
