@@ -817,14 +817,12 @@ class Dependator(object):
             self.logger.debug('clearDependency ID: %s' % (theId, ))
 
         if theId in self.instDependencies:
-            removedInstance = self.instDependencies[theId]
-            instName = removedInstance.instName
-            deps     = removedInstance.deps
-            self.instances[instName].removeInstanceDependency(theId)
-            for instInDep in deps:
+            instDep = self.instDependencies[theId]
+            self.instances[instDep.instName].removeInstanceDependency(theId)
+            for instInDep in instDep.deps:
                 self.instances[instInDep].removeInstanceInDependency(theId)
             del self.instDependencies[theId]
-            return removedInstance
+            return instDep
         return None
 
     # =========================================================================
@@ -948,15 +946,19 @@ class Dependator(object):
             self.logger.debug('deregisterAttributeUpdate id: %s' % (theId, ))
 
         if theId in self.attrDependencies:
-            removedInstance = self.attrDependencies[theId]
-            instName = removedInstance.instName
-            instDep  = removedInstance.instDep
-            self.instances[instName].removeAttributeDependency(removedInstance)
-            notificationId = self.instances[instDep].removeAttributeInDependency(removedInstance)
+            attrDep = self.attrDependencies[theId]
+            instDep   = attrDep.instDep
+            triggerId = self.instances[instDep].attrTriggers[attrDep.attr]
+            self.instances[attrDep.instName].removeAttributeDependency(attrDep)
+            notificationId = self.instances[instDep].removeAttributeInDependency(attrDep)
             if notificationId is not None:
+                self.notificator.deregisterNotification(triggerId,
+                                                        attrDep.priority,
+                                                        False,
+                                                        attrDep.callback)
                 self.notificator.deregisterTrigger(notificationId)
             del self.attrDependencies[theId]
-            return removedInstance
+            return attrDep
         return None
 
     # =========================================================================
