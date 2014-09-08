@@ -510,7 +510,7 @@ class Notificator(object):
             Id give is not a valid one.
         """
         if not self._isValidId(id):
-            raise InvalidIdException('id: %d' % id)
+            raise InvalidIdException('id: %s' % id)
 
     # =========================================================================
     def _isMethodType(self, method):

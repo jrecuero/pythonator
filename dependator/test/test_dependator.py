@@ -62,6 +62,7 @@ def TestDependatorSuite():
     suite.addTest(TestDependator('test_NotificationWithOneInstanceDependency'))
     suite.addTest(TestDependator('test_NotificationWithTwoInstanceDependency'))
     suite.addTest(TestDependator('test_NotificationNotCalledWhenDependencyRemoved'))
+    suite.addTest(TestDependator('test_NotificationWithOneAttributeUpdate'))
     return suite
 
 
@@ -351,6 +352,21 @@ class TestDependator(unittest.TestCase):
         self.assertFalse(notification.waiting.called)
         self.assertFalse(notification.paused.called)
         self.assertFalse(notification.deleted.called)
+
+    # =========================================================================
+    def test_NotificationWithOneAttributeUpdate(self):
+        """
+        Test dependator trigger attribute update notications
+        """
+        self.dep.registerInstance('ONE:1')
+        self.dep.registerInstance('TWO:2')
+
+        notification = mock.Mock()
+        result = self.dep.registerAttributeUpdate('ONE:1', 'TWO:2', 'x', notification.attribute_x)
+        self.assertIsNotNone(result)
+
+        self.dep.updateAttribute('TWO:2', 'x')
+        self.assertTrue(notification.attribute_x.called)
 
 
 ###############################################################################

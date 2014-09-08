@@ -914,7 +914,13 @@ class Dependator(object):
             self.instances[theInstName].addAttributeDependency(attrDep)
             self.instances[theInstWithAttrs].addAttributeInDependency(attrDep)
             result = self.notificator.registerTrigger(lambda x: x, self)
-            self.instances[theInstWithAttrs].attrTriggers[theAttr] = result[notificator.ID]
+            triggerId = result[notificator.ID]
+            self.notificator.registerNotification(triggerId,
+                                                  thePriority,
+                                                  False,    # insert after
+                                                  True,     # insert at front
+                                                  theCallback)
+            self.instances[theInstWithAttrs].attrTriggers[theAttr] = triggerId
             return self.attrID
 
     # =========================================================================
@@ -997,7 +1003,7 @@ class Dependator(object):
         """
         if theInst in self.instances and\
            theAttr in self.instances[theInst].attrTriggers:
-            self.notificator.runTrigger(self.instances[theInst].attrTriggers)
+            self.notificator.runTrigger(self.instances[theInst].attrTriggers[theAttr])
             return True
         return False
 
