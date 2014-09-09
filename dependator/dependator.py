@@ -114,6 +114,12 @@ class Dependator(object):
         >>> dep.logger # doctest: +ELLIPSIS
         <loggerator.Loggerator object at 0x...>
 
+
+        :raise plist.PriorityListException:
+            No list of priorities is provided.
+
+        :raise plist.DefaultPriorityException:
+            Default priority does not belong to the list of priorities provided.
         """
         self.instances = {}
         """
@@ -213,6 +219,10 @@ class Dependator(object):
 
         :rtype: Instance
         :return: New instance registered in dependator
+
+        :raise RegistrationException:
+            Registration exception if the trigger method was not registered
+            properly.
         """
         if __debug__:
             self.logger.debug('registerInstance %s' % (theInstName, ))
@@ -763,6 +773,12 @@ class Dependator(object):
 
         :rtype: int
         :return: ID for the new dependency entry created
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         if __debug__:
             self.logger.debug('setDependency instance: %s, dependencies: %s, callbacks: %s' %
@@ -812,6 +828,12 @@ class Dependator(object):
 
         :rtype: DepForInstance
         :return: Dependency if the id is found, else None if not found
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         if __debug__:
             self.logger.debug('clearDependency ID: %s' % (theId, ))
@@ -895,6 +917,10 @@ class Dependator(object):
 
         :type thePriority: Priority
         :param thePriority: Priority for callback notifications
+
+        :raise RegistrationException:
+            Registration exception if the trigger method was not registered
+            properly.
         """
         if __debug__:
             self.logger.debug('registerAttributeUpdate instance: %s, attr: %s' %

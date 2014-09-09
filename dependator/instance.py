@@ -122,6 +122,12 @@ class Instance(object):
 
         :type theName: str
         :param theName: Name of the instance
+
+        :raise PriorityListException:
+            No list of priorities is provided.
+
+        :raise DefaultPriorityException:
+            Default priority does not belong to list of priorities provided.
         """
         self.name        = theName
         """
@@ -203,6 +209,12 @@ class Instance(object):
 
         :rtype: int
         :return: instance id added
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         return self.instDeps.addAtFront(theInstId)
 
@@ -229,6 +241,12 @@ class Instance(object):
 
         :rtype: int
         :return: instance id removed else None if not found
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         return self.instDeps.remove(theInstId)
 
@@ -253,6 +271,12 @@ class Instance(object):
 
         :rtype: int
         :return: instance id added
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         return self.instInDeps.addAtFront(theInstId)
 
@@ -279,6 +303,12 @@ class Instance(object):
 
         :rtype: int
         :return: instance id removed else None if not found
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         return self.instInDeps.remove(theInstId)
 
@@ -301,6 +331,18 @@ class Instance(object):
 
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
+
+        :raise PriorityListException:
+            No list of priorities is provided.
+
+        :raise DefaultPriorityException:
+            Default priority does not belong to list of priorities provided.
         """
         if (theDepAttr.instDep, theDepAttr.attr) not in self.attrDeps:
             self.attrDeps[(theDepAttr.instDep, theDepAttr.attr)] = plist.PList(Priority.PRIOS, Priority.DEFAULT)
@@ -322,6 +364,12 @@ class Instance(object):
 
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         if (theDepAttr.instDep, theDepAttr.attr) in self.attrDeps:
             self.attrDeps[(theDepAttr.instDep, theDepAttr.attr)].remove(theDepAttr.id)
@@ -351,6 +399,18 @@ class Instance(object):
 
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
+
+        :raise PriorityListException:
+            No list of priorities is provided.
+
+        :raise DefaultPriorityException:
+            Default priority does not belong to list of priorities provided.
         """
         attr = theDepAttr.attr
         if not attr in self.attrInDeps:
@@ -377,6 +437,12 @@ class Instance(object):
 
         :type theDepAttr: DepForAttribute
         :param theDepAttr: DepForAttributeInstance
+
+        :raise InvalidEntryException:
+            Entry is None or not valid.
+
+        :raise InvalidPriorityException:
+            Priority is not a valid one.
         """
         id = None
         attr = theDepAttr.attr
